@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meet - Application de Rencontre{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#EC4899',
+                        accent: '#F59E0B'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation mobile-first -->
+    {% if current_user.is_authenticated %}
+    <nav class="bg-white shadow-lg border-b-2 border-primary fixed top-0 w-full z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('dashboard') }}" class="text-xl sm:text-2xl font-bold text-primary">
+                        <i class="fas fa-heart mr-2"></i>Meet
+                    </a>
+                </div>
+                
+                <!-- Menu mobile -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-700 hover:text-primary p-2">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Menu desktop -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-home mr-2"></i>Accueil
+                        </a>
+                        <a href="{{ url_for('matches') }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-users mr-2"></i>Matches
+                        </a>
+                        <a href="{{ url_for('messages') }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-envelope mr-2"></i>Messages
+                        </a>
+                        <a href="{{ url_for('profile', user_id=current_user.id) }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-user mr-2"></i>Profil
+                        </a>
+                        {% if current_user.email == 'admin@meet.com' %}
+                        <a href="{{ url_for('admin') }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-shield-alt mr-2"></i>Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="hidden md:flex items-center">
+                    <div class="relative">
+                        <button id="notifications-btn" class="text-gray-700 hover:text-primary p-2">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span id="notification-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50">
+                            <div class="py-1" id="notifications-list">
+                                <!-- Notifications ici -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ml-4">
+                        <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Menu mobile déroulant -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="{{ url_for('dashboard') }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
+                    <i class="fas fa-home mr-2"></i>Accueil
+                </a>
+                <a href="{{ url_for('matches') }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
+                    <i class="fas fa-users mr-2"></i>Matches
+                </a>
+                <a href="{{ url_for('messages') }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
+                    <i class="fas fa-envelope mr-2"></i>Messages
+                </a>
+                <a href="{{ url_for('profile', user_id=current_user.id) }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
+                    <i class="fas fa-user mr-2"></i>Profil
+                </a>
+                {% if current_user.email == 'admin@meet.com' %}
+                <a href="{{ url_for('admin') }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
+                    <i class="fas fa-shield-alt mr-2"></i>Administration
+                </a>
+                {% endif %}
+                <div class="border-t border-gray-200 pt-2 mt-2">
+                    <div class="relative px-3 py-2">
+                        <button id="mobile-notifications-btn" class="text-gray-700 hover:text-primary w-full text-left">
+                            <i class="fas fa-bell mr-2"></i>Notifications
+                        </button>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="block px-3 py-2 text-red-600 hover:text-red-700 rounded-md text-base font-medium">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Messages Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 mt-4">
+                {% for category, message in messages %}
+                    <div class="bg-{{ 'green' if category == 'success' else 'red' }}-100 border border-{{ 'green' if category == 'success' else 'red' }}-400 text-{{ 'green' if category == 'success' else 'red' }}-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <span class="block sm:inline">{{ message }}</span>
+                        <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                            <svg class="fill-current h-6 w-6 text-{{ 'green' if category == 'success' else 'red' }}-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <title>Close</title>
+                                <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 0 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 0 1 1.697 1.697l-2.758 3.152 2.758 3.15z"/>
+                            </svg>
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Contenu principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6 {% if current_user.is_authenticated %}pt-24{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div class="text-center">
+                <p>&copy; 2024 Meet - Application de Rencontre. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- JavaScript pour le menu mobile -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+                
+                // Fermer le menu en cliquant à l'extérieur
+                document.addEventListener('click', function(event) {
+                    if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

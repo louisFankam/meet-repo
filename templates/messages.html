@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Meet{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 h-96">
+            <!-- Liste des conversations -->
+            <div class="lg:col-span-1 border-r border-gray-200">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">Messages</h2>
+                    <p class="text-sm text-gray-600">Vos conversations éphémères</p>
+                </div>
+                
+                <div class="overflow-y-auto h-80">
+                    {% if conversations %}
+                        {% for conversation in conversations %}
+                        <div class="conversation-item p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition duration-200"
+                             onclick="loadConversation({{ conversation.other_user.id }})">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    {% if conversation.other_user.profile_photo %}
+                                    <img src="{{ url_for('static', filename='uploads/' + conversation.other_user.profile_photo) }}" 
+                                         alt="Photo de {{ conversation.other_user.first_name }}" 
+                                         class="w-12 h-12 rounded-full object-cover">
+                                    {% else %}
+                                    <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-sm font-medium text-gray-900 truncate">
+                                            {{ conversation.other_user.first_name }}
+                                        </h3>
+                                        <span class="text-xs text-gray-500">
+                                            {{ conversation.last_message_time|timeago }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-500 truncate">
+                                        {{ conversation.last_message_content }}
+                                    </p>
+                                </div>
+                                
+                                {% if conversation.unread_count > 0 %}
+                                <div class="flex-shrink-0">
+                                    <span class="bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                        {{ conversation.unread_count }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-12">
+                            <i class="fas fa-envelope text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">Aucune conversation pour le moment</p>
+                            <p class="text-sm text-gray-400 mt-2">Commencez à matcher pour discuter !</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Zone de chat -->
+            <div class="lg:col-span-2 flex flex-col">
+                {% if selected_conversation %}
+                <!-- En-tête de la conversation -->
+                <div class="p-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            {% if selected_conversation.other_user.profile_photo %}
+                            <img src="{{ url_for('static', filename='uploads/' + selected_conversation.other_user.profile_photo) }}" 
+                                 alt="Photo de {{ selected_conversation.other_user.first_name }}" 
+                                 class="w-10 h-10 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-600"></i>
+                            </div>
+                            {% endif %}
+                            
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">
+                                    {{ selected_conversation.other_user.first_name }}
+                                </h3>
+                                <p class="text-sm text-gray-500">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Messages éphémères (24h)
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button onclick="viewProfile({{ selected_conversation.other_user.id }})" 
+                                    class="text-gray-600 hover:text-primary p-2">
+                                <i class="fas fa-user"></i>
+                            </button>
+                            <button onclick="unmatch({{ selected_conversation.other_user.id }})" 
+                                    class="text-red-600 hover:text-red-700 p-2">
+                                <i class="fas fa-user-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Messages -->
+                <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+                    {% for message in selected_conversation.messages %}
+                    <div class="flex {{ 'justify-end' if message.sender_id == current_user.id else 'justify-start' }}">
+                        <div class="max-w-xs lg:max-w-md">
+                            <div class="bg-{{ 'primary' if message.sender_id == current_user.id else 'gray' }}-100 rounded-lg px-4 py-2">
+                                <p class="text-sm text-gray-900">{{ message.content }}</p>
+                                <div class="flex items-center justify-between mt-2">
+                                    <span class="text-xs text-gray-500">
+                                        {{ message.created_at|timeago }}
+                                    </span>
+                                    {% if message.sender_id == current_user.id %}
+                                    <span class="text-xs text-gray-400">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Expire dans {{ message.time_until_expiry }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Formulaire d'envoi -->
+                <div class="p-4 border-t border-gray-200">
+                    <form id="message-form" class="flex space-x-3">
+                        <input type="text" id="message-input" 
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                               placeholder="Tapez votre message... (disparaîtra dans 24h)">
+                        <button type="submit" 
+                                class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition duration-300">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    <p class="text-xs text-gray-500 mt-2 text-center">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Vos messages disparaissent automatiquement après 24 heures
+                    </p>
+                </div>
+                
+                {% else %}
+                <!-- Aucune conversation sélectionnée -->
+                <div class="flex-1 flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">Sélectionnez une conversation</h3>
+                        <p class="text-gray-500">Choisissez une conversation dans la liste pour commencer à discuter</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de profil rapide -->
+<div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+        <div class="text-center">
+            <div id="profile-photo" class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-200"></div>
+            <h3 id="profile-name" class="text-xl font-bold text-gray-900 mb-2"></h3>
+            <p id="profile-age-city" class="text-gray-600 mb-4"></p>
+            <p id="profile-bio" class="text-gray-700 mb-4"></p>
+            <div id="profile-interests" class="flex flex-wrap gap-2 justify-center mb-4"></div>
+            <button onclick="closeProfileModal()" class="bg-primary text-white px-6 py-2 rounded-lg">
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentConversationId = null;
+
+function loadConversation(userId) {
+    // Mettre à jour l'interface pour charger la conversation
+    window.location.href = '/messages?user=' + userId;
+}
+
+function viewProfile(userId) {
+    // Charger les informations du profil et afficher le modal
+    fetch('/api/user/' + userId)
+        .then(response => response.json())
+        .then(user => {
+            document.getElementById('profile-name').textContent = user.first_name + ', ' + user.age + ' ans';
+            document.getElementById('profile-age-city').textContent = user.city;
+            document.getElementById('profile-bio').textContent = user.bio || 'Aucune bio disponible';
+            
+            // Afficher les centres d'intérêt
+            const interestsContainer = document.getElementById('profile-interests');
+            interestsContainer.innerHTML = '';
+            if (user.interests) {
+                user.interests.forEach(interest => {
+                    const span = document.createElement('span');
+                    span.className = 'bg-primary bg-opacity-10 text-primary text-xs px-2 py-1 rounded-full';
+                    span.textContent = interest.name;
+                    interestsContainer.appendChild(span);
+                });
+            }
+            
+            // Afficher la photo si disponible
+            const photoContainer = document.getElementById('profile-photo');
+            if (user.profile_photo) {
+                photoContainer.innerHTML = `<img src="/static/uploads/${user.profile_photo}" class="w-24 h-24 rounded-full object-cover">`;
+            } else {
+                photoContainer.innerHTML = '<i class="fas fa-user text-4xl text-gray-400 flex items-center justify-center h-full"></i>';
+            }
+            
+            document.getElementById('profile-modal').classList.remove('hidden');
+        });
+}
+
+function closeProfileModal() {
+    document.getElementById('profile-modal').classList.add('hidden');
+}
+
+function unmatch(userId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce match ?')) {
+        fetch('/api/unmatch/' + userId, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+// Gestion de l'envoi de messages
+document.getElementById('message-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    
+    if (message && currentConversationId) {
+        sendMessage(message);
+        input.value = '';
+    }
+});
+
+function sendMessage(content) {
+    fetch('/api/send-message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            receiver_id: currentConversationId,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ajouter le message à l'interface
+            addMessageToUI(data.message);
+        }
+    });
+}
+
+function addMessageToUI(message) {
+    const container = document.getElementById('messages-container');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'flex justify-end';
+    messageDiv.innerHTML = `
+        <div class="max-w-xs lg:max-w-md">
+            <div class="bg-primary-100 rounded-lg px-4 py-2">
+                <p class="text-sm text-gray-900">${message.content}</p>
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-xs text-gray-500">À l'instant</span>
+                    <span class="text-xs text-gray-400">
+                        <i class="fas fa-clock mr-1"></i>
+                        Expire dans 24h
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(messageDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Auto-scroll vers le bas des messages
+const messagesContainer = document.getElementById('messages-container');
+if (messagesContainer) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+</script>
+{% endblock %}
