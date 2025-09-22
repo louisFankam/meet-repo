@@ -8,46 +8,46 @@
     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Bonjour, {{ current_user.first_name }} !</h1>
-                <p class="text-gray-600 mt-2">Découvrez de nouvelles personnes et créez des connexions</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Bonjour, {{ current_user.first_name }} !</h1>
+                <p class="text-sm sm:text-base text-gray-600 mt-2">Découvrez de nouvelles personnes et créez des connexions</p>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3 sm:space-x-4">
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-primary">{{ matches_count|default(0) }}</div>
-                    <div class="text-sm text-gray-600">Matches</div>
+                    <div class="text-xl sm:text-2xl font-bold text-primary">{{ matches_count|default(0) }}</div>
+                    <div class="text-xs sm:text-sm text-gray-600">Matches</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-secondary">{{ messages_count|default(0) }}</div>
-                    <div class="text-sm text-gray-600">Messages</div>
+                    <div class="text-xl sm:text-2xl font-bold text-secondary">{{ messages_count|default(0) }}</div>
+                    <div class="text-xs sm:text-sm text-gray-600">Messages</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Filtres -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Filtres</h2>
-        <form method="GET" class="grid md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+        <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Filtres</h2>
+        <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Âge</label>
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Âge</label>
                 <div class="flex space-x-2">
                     <input type="number" name="min_age" placeholder="18" min="18" max="100"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <span class="text-gray-500 self-center">à</span>
+                           class="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <span class="text-xs sm:text-sm text-gray-500 self-center">à</span>
                     <input type="number" name="max_age" placeholder="99" min="18" max="100"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                           class="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                 </div>
             </div>
             
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Ville</label>
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Ville</label>
                 <input type="text" name="city" placeholder="Toutes les villes"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                       class="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
             </div>
             
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Centres d'intérêt</label>
-                <select name="interest" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Centres d'intérêt</label>
+                <select name="interest" class="w-full px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     <option value="">Tous les intérêts</option>
                     <option value="sport">Sport</option>
                     <option value="musique">Musique</option>
@@ -61,21 +61,21 @@
             </div>
             
             <div class="flex items-end">
-                <button type="submit" class="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300">
-                    <i class="fas fa-search mr-2"></i>Filtrer
+                <button type="submit" class="w-full bg-primary text-white px-3 sm:px-4 py-2 text-sm rounded-lg hover:bg-primary-dark transition duration-300">
+                    <i class="fas fa-search mr-1 sm:mr-2"></i>Filtrer
                 </button>
             </div>
         </form>
     </div>
 
     <!-- Découverte de profils - Swipe Interface -->
-    <div class="bg-white rounded-2xl shadow-lg p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Découvrir des profils</h2>
+    <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
+        <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Découvrir des profils</h2>
         
         {% if profiles %}
         <div class="relative">
             <!-- Conteneur de cartes swipe -->
-            <div id="swipe-container" class="relative h-[600px] max-w-md mx-auto">
+            <div id="swipe-container" class="relative h-[500px] sm:h-[600px] max-w-md mx-auto">
                 {% for profile in profiles %}
                 <div class="absolute inset-0 bg-white rounded-2xl shadow-xl overflow-hidden profile-card" 
                      data-profile-id="{{ profile.user.id }}"
@@ -97,8 +97,8 @@
                         <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/70 to-transparent p-6 text-white">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
-                                    <h3 class="text-2xl font-bold">{{ profile.user.first_name }}, {{ profile.user.age }}</h3>
-                                    <div class="flex items-center text-sm opacity-90">
+                                    <h3 class="text-xl sm:text-2xl font-bold">{{ profile.user.first_name }}, {{ profile.user.age }}</h3>
+                                    <div class="flex items-center text-xs sm:text-sm opacity-90">
                                         <i class="fas fa-map-marker-alt mr-1"></i>{{ profile.user.city }}
                                     </div>
                                 </div>
@@ -111,7 +111,7 @@
                             </div>
                             
                             {% if profile.user.bio %}
-                            <p class="text-sm opacity-90 mb-3 line-clamp-2">{{ profile.user.bio }}</p>
+                            <p class="text-xs sm:text-sm opacity-90 mb-3 line-clamp-2">{{ profile.user.bio }}</p>
                             {% endif %}
                             
                             <!-- Centres d'intérêt -->
@@ -135,11 +135,11 @@
                         <div class="absolute top-4 right-4 z-10">
                             <div class="flex flex-col space-y-2">
                                 <button onclick="swipeLike({{ profile.user.id }})" 
-                                        class="bg-white text-green-500 w-12 h-12 rounded-full shadow-lg hover:scale-110 transition duration-300">
+                                        class="bg-white text-green-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg hover:scale-110 transition duration-300">
                                     <i class="fas fa-heart"></i>
                                 </button>
                                 <button onclick="swipePass({{ profile.user.id }})" 
-                                        class="bg-white text-red-500 w-12 h-12 rounded-full shadow-lg hover:scale-110 transition duration-300">
+                                        class="bg-white text-red-500 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg hover:scale-110 transition duration-300">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -160,53 +160,53 @@
             </div>
             
             <!-- Actions de navigation -->
-            <div class="flex justify-center space-x-4 mt-6">
+            <div class="flex justify-center space-x-3 sm:space-x-4 mt-4 sm:mt-6">
                 <button onclick="previousProfile()" 
-                        class="bg-gray-200 text-gray-600 w-12 h-12 rounded-full hover:bg-gray-300 transition duration-300">
+                        class="bg-gray-200 text-gray-600 w-10 h-10 sm:w-12 sm:h-12 rounded-full hover:bg-gray-300 transition duration-300">
                     <i class="fas fa-chevron-left"></i>
                 </button>
                 <div class="text-center">
-                    <div class="text-sm text-gray-600">Profil</div>
-                    <div class="font-semibold" id="profile-counter">1 / {{ profiles|length }}</div>
+                    <div class="text-xs sm:text-sm text-gray-600">Profil</div>
+                    <div class="text-sm sm:font-semibold" id="profile-counter">1 / {{ profiles|length }}</div>
                 </div>
                 <button onclick="nextProfile()" 
-                        class="bg-gray-200 text-gray-600 w-12 h-12 rounded-full hover:bg-gray-300 transition duration-300">
+                        class="bg-gray-200 text-gray-600 w-10 h-10 sm:w-12 sm:h-12 rounded-full hover:bg-gray-300 transition duration-300">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
         </div>
         
         <!-- Message quand tous les profils sont vus -->
-        <div id="no-more-profiles" class="hidden text-center py-12">
-            <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Vous avez vu tous les profils !</h3>
-            <p class="text-gray-500 mb-4">Essayez de modifier vos filtres ou revenez plus tard pour découvrir de nouvelles personnes.</p>
-            <button onclick="location.reload()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition duration-300">
-                <i class="fas fa-sync mr-2"></i>Recharger
+        <div id="no-more-profiles" class="hidden text-center py-8 sm:py-12">
+            <i class="fas fa-check-circle text-4xl sm:text-6xl text-green-500 mb-3 sm:mb-4"></i>
+            <h3 class="text-lg sm:text-xl font-semibold text-gray-600 mb-2">Vous avez vu tous les profils !</h3>
+            <p class="text-sm sm:text-base text-gray-500 mb-4">Essayez de modifier vos filtres ou revenez plus tard pour découvrir de nouvelles personnes.</p>
+            <button onclick="location.reload()" class="bg-primary text-white px-4 sm:px-6 py-2 text-sm rounded-lg hover:bg-primary-dark transition duration-300">
+                <i class="fas fa-sync mr-1 sm:mr-2"></i>Recharger
             </button>
         </div>
         
         {% else %}
-        <div class="text-center py-12">
-            <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Aucun profil trouvé</h3>
-            <p class="text-gray-500">Essayez de modifier vos filtres ou revenez plus tard</p>
+        <div class="text-center py-8 sm:py-12">
+            <i class="fas fa-search text-4xl sm:text-6xl text-gray-300 mb-3 sm:mb-4"></i>
+            <h3 class="text-lg sm:text-xl font-semibold text-gray-600 mb-2">Aucun profil trouvé</h3>
+            <p class="text-sm sm:text-base text-gray-500">Essayez de modifier vos filtres ou revenez plus tard</p>
         </div>
         {% endif %}
     </div>
 </div>
 
 <!-- Modal de profil détaillé -->
-<div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+<div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-4 sm:p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-start mb-4">
-            <h3 class="text-2xl font-bold text-gray-900" id="modal-profile-name">Profil</h3>
-            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900" id="modal-profile-name">Profil</h3>
+            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
-        <div class="grid md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <!-- Photos -->
             <div class="space-y-4">
                 <div class="relative">
@@ -220,10 +220,10 @@
             </div>
             
             <!-- Informations -->
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
                 <div>
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Informations personnelles</h4>
-                    <div class="space-y-2 text-sm text-gray-600">
+                    <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Informations personnelles</h4>
+                    <div class="space-y-2 text-xs sm:text-sm text-gray-600">
                         <p><strong>Âge :</strong> <span id="modal-profile-age"></span> ans</p>
                         <p><strong>Ville :</strong> <span id="modal-profile-city"></span></p>
                         <p><strong>Genre :</strong> <span id="modal-profile-gender"></span></p>
@@ -231,24 +231,24 @@
                 </div>
                 
                 <div>
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Bio</h4>
-                    <p id="modal-profile-bio" class="text-gray-600 text-sm"></p>
+                    <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Bio</h4>
+                    <p id="modal-profile-bio" class="text-gray-600 text-xs sm:text-sm"></p>
                 </div>
                 
                 <div>
-                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Centres d'intérêt</h4>
+                    <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Centres d'intérêt</h4>
                     <div id="modal-profile-interests" class="flex flex-wrap gap-2"></div>
                 </div>
                 
                 <!-- Actions -->
-                <div class="flex space-x-3 pt-4">
+                <div class="flex space-x-2 sm:space-x-3 pt-4">
                     <button onclick="swipePassFromModal()" 
-                            class="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition duration-300">
-                        <i class="fas fa-times mr-2"></i>Passer
+                            class="flex-1 bg-red-500 text-white py-2 px-3 sm:px-4 text-sm rounded-lg hover:bg-red-600 transition duration-300">
+                        <i class="fas fa-times mr-1 sm:mr-2"></i>Passer
                     </button>
                     <button onclick="swipeLikeFromModal()" 
-                            class="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition duration-300">
-                        <i class="fas fa-heart mr-2"></i>J'aime
+                            class="flex-1 bg-primary text-white py-2 px-3 sm:px-4 text-sm rounded-lg hover:bg-primary-dark transition duration-300">
+                        <i class="fas fa-heart mr-1 sm:mr-2"></i>J'aime
                     </button>
                 </div>
             </div>
@@ -257,18 +257,18 @@
 </div>
 
 <!-- Modal de match -->
-<div id="match-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
-        <div class="text-6xl text-primary mb-4">
+<div id="match-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full mx-4 text-center">
+        <div class="text-4xl sm:text-6xl text-primary mb-3 sm:mb-4">
             <i class="fas fa-heart"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-900 mb-4">C'est un match !</h3>
-        <p class="text-gray-600 mb-6">Vous avez un nouveau match !</p>
-        <div class="flex space-x-4">
-            <button onclick="closeMatchModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg">
+        <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">C'est un match !</h3>
+        <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Vous avez un nouveau match !</p>
+        <div class="flex space-x-3 sm:space-x-4">
+            <button onclick="closeMatchModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-3 sm:px-4 text-sm rounded-lg">
                 Continuer
             </button>
-            <a href="{{ url_for('messages') }}" class="flex-1 bg-primary text-white py-2 rounded-lg">
+            <a href="{{ url_for('messages') }}" class="flex-1 bg-primary text-white py-2 px-3 sm:px-4 text-sm rounded-lg">
                 Voir les messages
             </a>
         </div>
@@ -494,11 +494,14 @@ function swipeLike(profileId) {
         playSwipeSound('right');
     }
     
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/api/like/' + profileId, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
-        }
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
@@ -527,11 +530,14 @@ function swipePass(profileId) {
     // Jouer le son du swipe
     playSwipeSound('left');
     
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/api/pass/' + profileId, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
-        }
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {
