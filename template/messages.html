@@ -1,0 +1,959 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Meet{% endblock %}
+
+{% block content %}
+<div class="h-screen flex flex-col bg-gray-50">
+    <!-- Header mobile-optimisé -->
+    <div class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
+                    <i class="fas fa-comments text-primary mr-2 sm:mr-3"></i>Messages
+                </h1>
+                <div class="hidden sm:flex items-center space-x-2">
+                    <span class="bg-gradient-to-r from-primary to-secondary text-white text-xs px-3 py-1 rounded-full font-medium">
+                        🔥 Éphémères
+                    </span>
+                    <span class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
+                        <i class="fas fa-clock mr-1"></i>24h
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Boutons d'action adaptés au mobile -->
+            <div class="flex items-center space-x-1 sm:space-x-2">
+                <button onclick="refreshConversations()" 
+                        class="p-2 sm:p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition duration-200">
+                    <i class="fas fa-sync-alt text-sm sm:text-base"></i>
+                </button>
+                <button onclick="showSearchModal()" 
+                        class="p-2 sm:p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition duration-200">
+                    <i class="fas fa-search text-sm sm:text-base"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu principal mobile-optimisé -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar des conversations (optimisée mobile) -->
+        <div id="conversations-sidebar" class="w-full lg:w-80 bg-white border-r border-gray-200 flex flex-col lg:block {% if selected_conversation %}hidden lg:flex{% endif %}">
+            <!-- Barre de recherche optimisée mobile -->
+            <div class="p-3 sm:p-4 border-b border-gray-100">
+                <div class="relative">
+                    <input type="text" id="search-conversations" 
+                           class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-2 bg-gray-100 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                           placeholder="Rechercher...">
+                    <i class="fas fa-search absolute left-3 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                </div>
+            </div>
+            
+            <!-- Liste des conversations optimisée mobile -->
+            <div class="flex-1 overflow-y-auto" id="conversations-list">
+                {% if conversations %}
+                    {% for conversation in conversations %}
+                    <div class="conversation-item px-3 sm:px-4 py-3 hover:bg-gray-50 cursor-pointer transition duration-200 border-b border-gray-50 {{ 'bg-primary bg-opacity-5 border-l-4 border-primary' if selected_conversation and selected_conversation.other_user.id == conversation.other_user.id else '' }}"
+                         onclick="loadConversation({{ conversation.other_user.id }})">
+                        <div class="flex items-center space-x-2 sm:space-x-3">
+                            <!-- Photo de profil avec statut (taille mobile) -->
+                            <div class="relative flex-shrink-0">
+                                {% if conversation.other_user.profile_photo %}
+                                <img src="{{ url_for('static', filename='uploads/' + conversation.other_user.profile_photo) }}" 
+                                     alt="Photo de {{ conversation.other_user.first_name }}" 
+                                     class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-white shadow-sm">
+                                {% else %}
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center ring-2 ring-white shadow-sm">
+                                    <i class="fas fa-user text-white text-sm"></i>
+                                </div>
+                                {% endif %}
+                                <!-- Indicateur en ligne (taille mobile) -->
+                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 border-2 border-white rounded-full"></div>
+                            </div>
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-sm font-semibold text-gray-900 truncate">
+                                        {{ conversation.other_user.first_name }}
+                                        <span class="text-xs text-gray-500 font-normal ml-1">{{ conversation.other_user.age }} ans</span>
+                                    </h3>
+                                    <span class="text-xs text-gray-500 flex-shrink-0 ml-1 sm:ml-2">
+                                        {{ conversation.last_message.created_at|timeago }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Dernier message (optimisé mobile) -->
+                                <div class="flex items-center justify-between mt-1">
+                                    <p class="text-xs sm:text-sm text-gray-600 truncate">
+                                        {% if conversation.last_message.sender_id == current_user.id %}
+                                        <span class="text-gray-400 text-xs">Vous:</span> 
+                                        {% endif %}
+                                        {{ conversation.last_message.content }}
+                                    </p>
+                                    
+                                    <!-- Badge de non lu (taille mobile) -->
+                                    {% if conversation.unread_count > 0 %}
+                                    <span class="bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center flex-shrink-0 ml-1 sm:ml-2 font-bold">
+                                        {{ conversation.unread_count }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="flex flex-col items-center justify-center h-full py-8 sm:py-12 px-4 sm:px-6 text-center">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                            <i class="fas fa-envelope text-white text-xl sm:text-2xl"></i>
+                        </div>
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">Pas encore de messages</h3>
+                        <p class="text-gray-500 text-xs sm:text-sm mb-3 sm:mb-4">Commencez à matcher pour discuter !</p>
+                        <a href="/dashboard" class="bg-primary text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-200 text-xs sm:text-sm font-medium">
+                            <i class="fas fa-heart mr-1 sm:mr-2"></i>Découvrir des profils
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Zone de chat principale (optimisée mobile) -->
+        <div class="flex-1 flex flex-col bg-white {% if not selected_conversation %}hidden lg:flex{% endif %}" id="chat-area">
+            {% if selected_conversation %}
+            <!-- En-tête de conversation mobile-optimisé -->
+            <div class="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <!-- Bouton retour mobile -->
+                        <button onclick="showConversationsList()" 
+                                class="lg:hidden p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition duration-200">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        
+                        <!-- Photo et infos utilisateur (mobile) -->
+                        <div class="flex items-center space-x-2 sm:space-x-3">
+                            {% if selected_conversation.other_user.profile_photo %}
+                            <img src="{{ url_for('static', filename='uploads/' + selected_conversation.other_user.profile_photo) }}" 
+                                 alt="Photo de {{ selected_conversation.other_user.first_name }}" 
+                                 class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-gray-200">
+                            {% else %}
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center ring-2 ring-gray-200">
+                                <i class="fas fa-user text-white text-xs sm:text-sm"></i>
+                            </div>
+                            {% endif %}
+                            
+                            <div>
+                                <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+                                    {{ selected_conversation.other_user.first_name }}, {{ selected_conversation.other_user.age }}
+                                </h3>
+                                <div class="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-500">
+                                    <span class="flex items-center">
+                                        <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full mr-1"></div>
+                                        <span class="hidden sm:inline">En ligne</span>
+                                    </span>
+                                    <span class="hidden sm:inline">•</span>
+                                    <span class="flex items-center hidden sm:inline">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        {{ selected_conversation.other_user.city }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions (optimisées mobile) -->
+                    <div class="flex items-center space-x-1 sm:space-x-2">
+                        <button onclick="viewProfile({{ selected_conversation.other_user.id }})" 
+                                class="p-1.5 sm:p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition duration-200"
+                                title="Voir le profil">
+                            <i class="fas fa-user text-sm sm:text-base"></i>
+                        </button>
+                        <button onclick="startVideoCall()" 
+                                class="p-1.5 sm:p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg transition duration-200"
+                                title="Appel vidéo">
+                            <i class="fas fa-video text-sm sm:text-base"></i>
+                        </button>
+                        <button onclick="showMoreOptions()" 
+                                class="p-1.5 sm:p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition duration-200"
+                                title="Plus d'options">
+                            <i class="fas fa-ellipsis-v text-sm sm:text-base"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Zone de messages (optimisée mobile) -->
+            <div class="flex-1 overflow-hidden relative">
+                <!-- Background subtil -->
+                <div class="absolute inset-0 bg-gradient-to-b from-gray-50 to-white opacity-50"></div>
+                
+                <!-- Messages (padding mobile adapté) -->
+                <div id="messages-container" 
+                     class="relative h-full overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
+                    <!-- Date de séparation (mobile) -->
+                    {% if selected_conversation.messages %}
+                    <div class="flex justify-center">
+                        <span class="bg-gray-200 text-gray-600 text-xs px-2 py-1 sm:px-3 sm:py-1 rounded-full">
+                            Aujourd'hui
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% for message in selected_conversation.messages %}
+                    <div class="flex {{ 'justify-end' if message.sender_id == current_user.id else 'justify-start' }} message-item"
+                         data-message-id="{{ message.id }}">
+                        <div class="flex {{ 'flex-row-reverse' if message.sender_id == current_user.id else 'flex-row' }} items-end space-x-1.5 sm:space-x-2 max-w-[200px] sm:max-w-xs lg:max-w-md">
+                            <!-- Photo miniature (taille mobile) -->
+                            {% if loop.first or loop.previtem.sender_id != message.sender_id %}
+                            <div class="flex-shrink-0">
+                                {% if message.sender_id == current_user.id %}
+                                {% if current_user.profile_photo %}
+                                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" 
+                                     alt="Vous" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover">
+                                {% else %}
+                                <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-600 text-xs"></i>
+                                </div>
+                                {% endif %}
+                                {% else %}
+                                {% if selected_conversation.other_user.profile_photo %}
+                                <img src="{{ url_for('static', filename='uploads/' + selected_conversation.other_user.profile_photo) }}" 
+                                     alt="{{ selected_conversation.other_user.first_name }}" 
+                                     class="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover">
+                                {% else %}
+                                <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-600 text-xs"></i>
+                                </div>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div class="w-5 sm:w-6 flex-shrink-0"></div>
+                            {% endif %}
+                            
+                            <!-- Contenu du message (mobile) -->
+                            <div class="relative">
+                                <div class="bg-{{ 'primary' if message.sender_id == current_user.id else 'gray' }}-100 
+                                            rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-2 
+                                            {{ 'rounded-br-sm' if message.sender_id == current_user.id else 'rounded-bl-sm' }}
+                                            shadow-sm">
+                                    <p class="text-xs sm:text-sm text-gray-900 leading-relaxed">{{ message.content }}</p>
+                                </div>
+                                
+                                <!-- Timestamp (mobile) -->
+                                <div class="flex items-center justify-between mt-1 px-1">
+                                    <span class="text-xs text-gray-500">
+                                        {{ message.created_at.strftime('%H:%M') }}
+                                    </span>
+                                    {% if message.sender_id == current_user.id %}
+                                    <span class="text-xs text-gray-400 ml-1 sm:ml-2">
+                                        <i class="fas fa-clock mr-0.5 sm:mr-1"></i>
+                                        {{ message.time_until_expiry }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Indicateur "en train d'écrire" (mobile) -->
+                    <div id="typing-indicator" class="hidden flex items-center space-x-1.5 sm:space-x-2 text-gray-500">
+                        <div class="flex space-x-1">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                        <span class="text-xs sm:text-sm">{{ selected_conversation.other_user.first_name }} écrit...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Zone d'envoi de message (optimisée mobile) -->
+            <div class="border-t border-gray-200 bg-white px-3 sm:px-6 py-3 sm:py-4">
+                <form id="message-form" class="flex items-end space-x-2 sm:space-x-3">
+                    <!-- Bouton émoji (taille mobile) -->
+                    <button type="button" onclick="toggleEmojiPicker()" 
+                            class="p-1.5 sm:p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition duration-200">
+                        <i class="far fa-smile text-sm sm:text-base"></i>
+                    </button>
+                    
+                    <!-- Input de message (mobile) -->
+                    <div class="flex-1 relative">
+                        <textarea id="message-input" 
+                                  class="w-full px-3 py-2 sm:px-4 sm:py-3 bg-gray-100 border border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                                  placeholder="Votre message..."
+                                  rows="1"></textarea>
+                        
+                        <!-- Emoji picker (mobile-optimisé) -->
+                        <div id="emoji-picker" class="hidden absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-1.5 sm:p-2 z-10">
+                            <div class="grid grid-cols-8 gap-0.5 sm:gap-1">
+                                <button type="button" onclick="insertEmoji('😀')" class="p-1 hover:bg-gray-100 rounded text-sm">😀</button>
+                                <button type="button" onclick="insertEmoji('😍')" class="p-1 hover:bg-gray-100 rounded text-sm">😍</button>
+                                <button type="button" onclick="insertEmoji('🥰')" class="p-1 hover:bg-gray-100 rounded text-sm">🥰</button>
+                                <button type="button" onclick="insertEmoji('😂')" class="p-1 hover:bg-gray-100 rounded text-sm">😂</button>
+                                <button type="button" onclick="insertEmoji('😎')" class="p-1 hover:bg-gray-100 rounded text-sm">😎</button>
+                                <button type="button" onclick="insertEmoji('🔥')" class="p-1 hover:bg-gray-100 rounded text-sm">🔥</button>
+                                <button type="button" onclick="insertEmoji('💕')" class="p-1 hover:bg-gray-100 rounded text-sm">💕</button>
+                                <button type="button" onclick="insertEmoji('👍')" class="p-1 hover:bg-gray-100 rounded text-sm">👍</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bouton d'envoi (mobile) -->
+                    <button type="submit" 
+                            class="bg-primary text-white p-2 sm:p-3 rounded-xl hover:bg-primary-dark transition duration-200 shadow-sm hover:shadow-md">
+                        <i class="fas fa-paper-plane text-sm sm:text-base"></i>
+                    </button>
+                </form>
+                
+                <!-- Mention éphémère (mobile) -->
+                <div class="flex items-center justify-center mt-1.5 sm:mt-2">
+                    <div class="bg-gradient-to-r from-primary to-secondary text-white text-xs px-2 py-1 sm:px-3 sm:py-1 rounded-full">
+                        <i class="fas fa-hourglass-half mr-0.5 sm:mr-1"></i>
+                        Messages éphémères - 24h
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <!-- État vide moderne -->
+            <div class="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+                <div class="text-center max-w-md mx-auto">
+                    <div class="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-comments text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3">Bienvenue dans la messagerie</h3>
+                    <p class="text-gray-600 mb-6">Sélectionnez une conversation dans la liste pour commencer à discuter avec vos matches.</p>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-lightbulb text-blue-500"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="text-sm font-medium text-blue-900 mb-1">💡 Conseils</h4>
+                                <ul class="text-sm text-blue-700 space-y-1">
+                                    <li>• Vos messages disparaissent après 24h</li>
+                                    <li>• Soyez respectueux et bienveillant</li>
+                                    <li>• Pas de contenu inapproprié</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if not conversations %}
+                    <a href="/dashboard" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition duration-200 font-medium inline-flex items-center">
+                        <i class="fas fa-heart mr-2"></i>
+                        Découvrir des profils
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de profil rapide -->
+<div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+        <div class="text-center">
+            <div id="profile-photo" class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-200"></div>
+            <h3 id="profile-name" class="text-xl font-bold text-gray-900 mb-2"></h3>
+            <p id="profile-age-city" class="text-gray-600 mb-4"></p>
+            <p id="profile-bio" class="text-gray-700 mb-4"></p>
+            <div id="profile-interests" class="flex flex-wrap gap-2 justify-center mb-4"></div>
+            <button onclick="closeProfileModal()" class="bg-primary text-white px-6 py-2 rounded-lg">
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuration globale
+let currentConversationId = null;
+let currentOtherUserId = null;
+let messageUpdateInterval = null;
+let typingTimeout = null;
+let isTyping = false;
+let isMobile = window.innerWidth < 1024;
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeChat();
+    setupAutoResize();
+    setupKeyboardShortcuts();
+    setupMobileOptimizations();
+    startRealTimeUpdates();
+    
+    // Récupérer l'ID de la conversation actuelle depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user');
+    if (userId) {
+        currentOtherUserId = parseInt(userId);
+        currentConversationId = userId;
+        
+        // Sur mobile, afficher directement la conversation si un user est spécifié
+        if (isMobile && userId) {
+            showChatArea();
+        }
+    }
+});
+
+// Configuration des optimisations mobiles
+function setupMobileOptimizations() {
+    // Gestion du redimensionnement
+    window.addEventListener('resize', function() {
+        const wasMobile = isMobile;
+        isMobile = window.innerWidth < 1024;
+        
+        if (wasMobile !== isMobile) {
+            handleOrientationChange();
+        }
+    });
+    
+    // Gestion de l'orientation
+    window.addEventListener('orientationchange', handleOrientationChange);
+    
+    // Optimisation du scroll pour mobile
+    if (isMobile) {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            // Désactiver le scroll bounce sur iOS
+            messagesContainer.style.webkitOverflowScrolling = 'touch';
+        }
+    }
+    
+    // Gestion du viewport pour mobile
+    if (isMobile) {
+        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    }
+}
+
+// Initialisation du chat
+function initializeChat() {
+    const messagesContainer = document.getElementById('messages-container');
+    const messageInput = document.getElementById('message-input');
+    
+    // Auto-scroll vers le bas
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Focus sur l'input
+    if (messageInput) {
+        messageInput.focus();
+    }
+    
+    // Gestion du formulaire
+    const messageForm = document.getElementById('message-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', handleMessageSubmit);
+    }
+    
+    // Gestion de la recherche
+    const searchInput = document.getElementById('search-conversations');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+    }
+}
+
+// Configuration du redimensionnement automatique du textarea
+function setupAutoResize() {
+    const messageInput = document.getElementById('message-input');
+    if (!messageInput) return;
+    
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        const maxHeight = isMobile ? 80 : 120; // Limite de hauteur sur mobile
+        this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
+        
+        // Indicateur "en train d'écrire"
+        if (this.value.trim() && currentOtherUserId) {
+            sendTypingIndicator();
+        }
+    });
+    
+    // Gestion du clavier virtuel mobile
+    messageInput.addEventListener('focus', function() {
+        if (isMobile) {
+            // Réduire le padding sur mobile pour faire de la place au clavier
+            setTimeout(() => {
+                scrollToBottom();
+            }, 300);
+        }
+    });
+    
+    // Gestion du Shift+Enter pour nouvelle ligne
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('message-form')?.dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    // Optimisation pour le tactile
+    messageInput.addEventListener('touchstart', function() {
+        this.classList.add('focus:ring-2');
+    });
+}
+
+// Configuration des raccourcis clavier
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K pour rechercher (désactivé sur mobile)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !isMobile) {
+            e.preventDefault();
+            document.getElementById('search-conversations')?.focus();
+        }
+        
+        // Échap pour fermer les modaux
+        if (e.key === 'Escape') {
+            closeEmojiPicker();
+            closeProfileModal();
+        }
+    });
+}
+
+// Démarrer les mises à jour en temps réel
+function startRealTimeUpdates() {
+    if (currentOtherUserId) {
+        // Mise à jour des messages : 5 secondes sur mobile pour économiser la batterie
+        const updateInterval = isMobile ? 5000 : 3000;
+        messageUpdateInterval = setInterval(updateMessages, updateInterval);
+    }
+}
+
+// Arrêter les mises à jour en temps réel
+function stopRealTimeUpdates() {
+    if (messageUpdateInterval) {
+        clearInterval(messageUpdateInterval);
+        messageUpdateInterval = null;
+    }
+}
+
+// Gestion de l'envoi de messages
+function handleMessageSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+    
+    if (message && currentOtherUserId) {
+        sendMessage(message);
+        input.value = '';
+        input.style.height = 'auto';
+        
+        // Cacher l'indicateur "en train d'écrire"
+        hideTypingIndicator();
+    }
+}
+
+// Envoyer un message
+function sendMessage(content) {
+    fetch('/api/send-message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            receiver_id: currentOtherUserId,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addMessageToUI(data.message, true);
+            updateLastMessageInSidebar(data.message);
+            showNotification('Message envoyé', 'success');
+        } else {
+            showNotification('Erreur lors de l\'envoi', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showNotification('Erreur de connexion', 'error');
+    });
+}
+
+// Ajouter un message à l'interface (optimisé mobile)
+function addMessageToUI(message, isSent = false) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `flex ${isSent ? 'justify-end' : 'justify-start'} message-item`;
+    messageDiv.setAttribute('data-message-id', message.id);
+    
+    const timeString = formatMessageTime(message.created_at);
+    
+    // Tailles adaptées pour mobile vs desktop
+    const maxWClass = isMobile ? 'max-w-[200px]' : 'max-w-xs lg:max-w-md';
+    const spaceXClass = isMobile ? 'space-x-1.5' : 'space-x-2';
+    const avatarSize = isMobile ? 'w-5 h-5' : 'w-6 h-6';
+    const avatarIconSize = isMobile ? 'text-xs' : 'text-xs';
+    const messagePadding = isMobile ? 'px-3 py-2' : 'px-4 py-2';
+    const messageRadius = isMobile ? 'rounded-xl' : 'rounded-2xl';
+    const textSize = isMobile ? 'text-xs' : 'text-sm';
+    
+    messageDiv.innerHTML = `
+        <div class="flex ${isSent ? 'flex-row-reverse' : 'flex-row'} items-end ${spaceXClass} ${maxWClass}">
+            <div class="flex-shrink-0">
+                <div class="${avatarSize} rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <i class="fas fa-user text-white ${avatarIconSize}"></i>
+                </div>
+            </div>
+            <div class="relative">
+                <div class="bg-${isSent ? 'primary' : 'gray'}-100 ${messageRadius} ${messagePadding} ${isSent ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-sm">
+                    <p class="${textSize} text-gray-900 leading-relaxed">${escapeHtml(message.content)}</p>
+                </div>
+                <div class="flex items-center justify-between mt-1 px-1">
+                    <span class="text-xs text-gray-500">${timeString}</span>
+                    ${isSent ? `<span class="text-xs text-gray-400 ml-${isMobile ? '1' : '2'}"><i class="fas fa-clock mr-0.5"></i>24h</span>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    scrollToBottom();
+    
+    // Animation d'entrée (plus rapide sur mobile)
+    const animationDuration = isMobile ? 200 : 300;
+    messageDiv.style.opacity = '0';
+    messageDiv.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+        messageDiv.style.transition = `all ${animationDuration}ms ease`;
+        messageDiv.style.opacity = '1';
+        messageDiv.style.transform = 'translateY(0)';
+    }, 10);
+}
+
+// Mettre à jour les messages
+function updateMessages() {
+    if (!currentOtherUserId) return;
+    
+    fetch(`/api/messages/${currentOtherUserId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.messages) {
+                updateMessagesUI(data.messages);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur de mise à jour:', error);
+        });
+}
+
+// Mettre à jour l'interface des messages
+function updateMessagesUI(messages) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+    
+    // Vérifier si de nouveaux messages ont été ajoutés
+    const existingMessageIds = Array.from(container.querySelectorAll('.message-item')).map(el => el.getAttribute('data-message-id'));
+    const newMessages = messages.filter(msg => !existingMessageIds.includes(msg.id.toString()));
+    
+    if (newMessages.length > 0) {
+        newMessages.forEach(message => {
+            const isSent = message.sender_id === {{ current_user.id }};
+            addMessageToUI(message, isSent);
+        });
+    }
+}
+
+// Charger une conversation
+function loadConversation(userId) {
+    // Arrêter les mises à jour actuelles
+    stopRealTimeUpdates();
+    
+    // Mettre à jour les variables globales
+    currentOtherUserId = userId;
+    currentConversationId = userId;
+    
+    // Sur mobile, afficher la conversation sans recharger la page
+    if (isMobile) {
+        showChatArea();
+        // Charger les messages via AJAX
+        updateMessages();
+    } else {
+        // Sur desktop, recharger la page
+        window.location.href = '/messages?user=' + userId;
+    }
+}
+
+// Fonctions mobile
+function showConversationsList() {
+    document.getElementById('conversations-sidebar').classList.remove('hidden');
+    document.getElementById('chat-area').classList.add('hidden');
+}
+
+function showChatArea() {
+    document.getElementById('conversations-sidebar').classList.add('hidden');
+    document.getElementById('chat-area').classList.remove('hidden');
+}
+
+// Gestion de l'orientation mobile
+function handleOrientationChange() {
+    const isLandscape = window.innerWidth > window.innerHeight;
+    const messagesContainer = document.getElementById('messages-container');
+    
+    if (messagesContainer) {
+        if (isLandscape) {
+            messagesContainer.style.maxHeight = '60vh';
+        } else {
+            messagesContainer.style.maxHeight = '';
+        }
+    }
+}
+
+// Optimisation du scroll mobile
+function scrollToBottom() {
+    const container = document.getElementById('messages-container');
+    if (container) {
+        // Animation douce pour mobile
+        if (window.innerWidth < 1024) {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            });
+        } else {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+}
+
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+        return 'À l\'instant';
+    } else if (diffInMinutes < 60) {
+        return `Il y a ${diffInMinutes} min`;
+    } else {
+        return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Gestion des émoticônes
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    picker.classList.toggle('hidden');
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('message-input');
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+    
+    input.value = text.substring(0, start) + emoji + text.substring(end);
+    input.selectionStart = input.selectionEnd = start + emoji.length;
+    input.focus();
+    
+    closeEmojiPicker();
+}
+
+function closeEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    picker.classList.add('hidden');
+}
+
+// Indicateur "en train d'écrire"
+function sendTypingIndicator() {
+    // Simuler l'envoi d'un indicateur (à implémenter avec WebSocket côté serveur)
+    if (!isTyping) {
+        isTyping = true;
+        // Ici vous pourriez envoyer un signal WebSocket
+    }
+    
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        isTyping = false;
+        // Envoyer signal "plus en train d'écrire"
+    }, 1000);
+}
+
+function showTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.classList.remove('hidden');
+        scrollToBottom();
+    }
+}
+
+function hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.classList.add('hidden');
+    }
+}
+
+// Recherche de conversations
+function handleSearch(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const conversations = document.querySelectorAll('.conversation-item');
+    
+    conversations.forEach(conv => {
+        const name = conv.querySelector('h3').textContent.toLowerCase();
+        const message = conv.querySelector('p').textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || message.includes(searchTerm)) {
+            conv.style.display = 'block';
+        } else {
+            conv.style.display = 'none';
+        }
+    });
+}
+
+// Autres fonctionnalités
+function refreshConversations() {
+    window.location.reload();
+}
+
+function showSearchModal() {
+    alert('Fonctionnalité de recherche avancée à implémenter!');
+}
+
+function startVideoCall() {
+    showNotification('Appel vidéo bientôt disponible!', 'info');
+}
+
+function showMoreOptions() {
+    showNotification('Plus d\'options bientôt disponibles!', 'info');
+}
+
+function viewProfile(userId) {
+    fetch('/api/user/' + userId)
+        .then(response => response.json())
+        .then(user => {
+            document.getElementById('profile-name').textContent = user.first_name + ', ' + user.age + ' ans';
+            document.getElementById('profile-age-city').textContent = user.city;
+            document.getElementById('profile-bio').textContent = user.bio || 'Aucune bio disponible';
+            
+            const interestsContainer = document.getElementById('profile-interests');
+            interestsContainer.innerHTML = '';
+            if (user.interests) {
+                user.interests.forEach(interest => {
+                    const span = document.createElement('span');
+                    span.className = 'bg-primary bg-opacity-10 text-primary text-xs px-2 py-1 rounded-full';
+                    span.textContent = interest.name;
+                    interestsContainer.appendChild(span);
+                });
+            }
+            
+            const photoContainer = document.getElementById('profile-photo');
+            if (user.profile_photo) {
+                photoContainer.innerHTML = `<img src="/static/uploads/${user.profile_photo}" class="w-24 h-24 rounded-full object-cover">`;
+            } else {
+                photoContainer.innerHTML = '<i class="fas fa-user text-4xl text-gray-400 flex items-center justify-center h-full"></i>';
+            }
+            
+            document.getElementById('profile-modal').classList.remove('hidden');
+        });
+}
+
+function closeProfileModal() {
+    document.getElementById('profile-modal').classList.add('hidden');
+}
+
+function unmatch(userId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce match ? Cette action est irréversible.')) {
+        fetch('/api/unmatch/' + userId, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Match supprimé', 'success');
+                window.location.href = '/messages';
+            } else {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showNotification('Erreur de connexion', 'error');
+        });
+    }
+}
+
+// Mettre à jour le dernier message dans la sidebar
+function updateLastMessageInSidebar(message) {
+    const conversations = document.querySelectorAll('.conversation-item');
+    conversations.forEach(conv => {
+        const userId = conv.getAttribute('onclick').match(/loadConversation\((\d+)\)/)[1];
+        if (userId == message.receiver_id || userId == message.sender_id) {
+            const messageText = conv.querySelector('p');
+            const timeSpan = conv.querySelector('.text-xs.text-gray-500');
+            if (messageText) {
+                messageText.textContent = `Vous: ${message.content}`;
+            }
+            if (timeSpan) {
+                timeSpan.textContent = 'À l\'instant';
+            }
+        }
+    });
+}
+
+// Fonction de notification simple
+function showNotification(message, type = 'success') {
+    // Créer un élément de notification
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white transition-all duration-300 transform translate-x-full`;
+    
+    // Définir la couleur en fonction du type
+    if (type === 'success') {
+        notification.classList.add('bg-green-500');
+    } else if (type === 'error') {
+        notification.classList.add('bg-red-500');
+    } else if (type === 'info') {
+        notification.classList.add('bg-blue-500');
+    } else {
+        notification.classList.add('bg-gray-500');
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Animation d'entrée
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 10);
+    
+    // Auto-suppression après 3 secondes
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Nettoyage au déchargement de la page
+window.addEventListener('beforeunload', function() {
+    stopRealTimeUpdates();
+});
+
+// Gestion du focus
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && currentOtherUserId) {
+        updateMessages();
+    }
+});
+</script>
+{% endblock %}

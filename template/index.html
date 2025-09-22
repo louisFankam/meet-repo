@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Meet - Trouvez l'Amour{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-secondary to-accent">
+    <div class="max-w-4xl mx-auto text-center text-white px-4">
+        <div class="mb-12">
+            <h1 class="text-6xl font-bold mb-6">
+                <i class="fas fa-heart text-8xl mb-8 block"></i>
+                Trouvez l'Amour
+            </h1>
+            <p class="text-xl mb-8 text-gray-100">
+                Découvrez des personnes partageant vos centres d'intérêt et créez des connexions authentiques
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ url_for('register') }}" class="bg-white text-primary px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition duration-300 transform hover:scale-105">
+                    <i class="fas fa-user-plus mr-2"></i>Commencer
+                </a>
+                <a href="{{ url_for('login') }}" class="border-2 border-white text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-white hover:text-primary transition duration-300 transform hover:scale-105">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Se connecter
+                </a>
+            </div>
+        </div>
+
+        <!-- Fonctionnalités -->
+        <div class="grid md:grid-cols-3 gap-8 mt-16">
+            <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 border border-white border-opacity-20">
+                <i class="fas fa-users text-4xl mb-4 text-accent"></i>
+                <h3 class="text-xl font-semibold mb-2">Matching Intelligent</h3>
+                <p class="text-gray-200">Trouvez des personnes partageant vos passions et centres d'intérêt</p>
+            </div>
+            
+            <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 border border-white border-opacity-20">
+                <i class="fas fa-clock text-4xl mb-4 text-accent"></i>
+                <h3 class="text-xl font-semibold mb-2">Messages Éphémères</h3>
+                <p class="text-gray-200">Vos conversations disparaissent après 24h pour plus d'authenticité</p>
+            </div>
+            
+            <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 border border-white border-opacity-20">
+                <i class="fas fa-heart text-4xl mb-4 text-accent"></i>
+                <h3 class="text-xl font-semibold mb-2">100% Gratuit</h3>
+                <p class="text-gray-200">Aucun abonnement, aucune limitation, juste l'amour authentique</p>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+{% endblock %}

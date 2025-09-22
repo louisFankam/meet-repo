@@ -1,0 +1,668 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord - Meet{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- En-tête du tableau de bord -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Bonjour, {{ current_user.first_name }} !</h1>
+                <p class="text-gray-600 mt-2">Découvrez de nouvelles personnes et créez des connexions</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-primary">{{ matches_count|default(0) }}</div>
+                    <div class="text-sm text-gray-600">Matches</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-secondary">{{ messages_count|default(0) }}</div>
+                    <div class="text-sm text-gray-600">Messages</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Filtres</h2>
+        <form method="GET" class="grid md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Âge</label>
+                <div class="flex space-x-2">
+                    <input type="number" name="min_age" placeholder="18" min="18" max="100"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <span class="text-gray-500 self-center">à</span>
+                    <input type="number" name="max_age" placeholder="99" min="18" max="100"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Ville</label>
+                <input type="text" name="city" placeholder="Toutes les villes"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Centres d'intérêt</label>
+                <select name="interest" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <option value="">Tous les intérêts</option>
+                    <option value="sport">Sport</option>
+                    <option value="musique">Musique</option>
+                    <option value="voyage">Voyage</option>
+                    <option value="cuisine">Cuisine</option>
+                    <option value="art">Art</option>
+                    <option value="lecture">Lecture</option>
+                    <option value="cinema">Cinéma</option>
+                    <option value="nature">Nature</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition duration-300">
+                    <i class="fas fa-search mr-2"></i>Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Découverte de profils - Swipe Interface -->
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Découvrir des profils</h2>
+        
+        {% if profiles %}
+        <div class="relative">
+            <!-- Conteneur de cartes swipe -->
+            <div id="swipe-container" class="relative h-[600px] max-w-md mx-auto">
+                {% for profile in profiles %}
+                <div class="absolute inset-0 bg-white rounded-2xl shadow-xl overflow-hidden profile-card" 
+                     data-profile-id="{{ profile.user.id }}"
+                     style="z-index: {{ profiles|length - loop.index0 }};">
+                    
+                    <!-- Image principale -->
+                    <div class="relative h-full bg-gray-200">
+                        {% if profile.user.profile_photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + profile.user.profile_photo) }}" 
+                             alt="Photo de {{ profile.user.first_name }}" 
+                             class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <i class="fas fa-user text-6xl text-gray-400"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Overlay d'informations -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/70 to-transparent p-6 text-white">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="text-2xl font-bold">{{ profile.user.first_name }}, {{ profile.user.age }}</h3>
+                                    <div class="flex items-center text-sm opacity-90">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>{{ profile.user.city }}
+                                    </div>
+                                </div>
+                                {% if profile.interests %}
+                                <button onclick="viewProfile({{ profile.user.id }})" 
+                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 backdrop-blur-sm rounded-full p-2 transition duration-300">
+                                    <i class="fas fa-info text-white"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            
+                            {% if profile.user.bio %}
+                            <p class="text-sm opacity-90 mb-3 line-clamp-2">{{ profile.user.bio }}</p>
+                            {% endif %}
+                            
+                            <!-- Centres d'intérêt -->
+                            {% if profile.interests %}
+                            <div class="flex flex-wrap gap-1">
+                                {% for interest in profile.interests[:4] %}
+                                <span class="bg-white bg-opacity-20 backdrop-blur-sm text-xs px-2 py-1 rounded-full">
+                                    {{ interest.name }}
+                                </span>
+                                {% endfor %}
+                                {% if profile.interests|length > 4 %}
+                                <span class="bg-white bg-opacity-20 backdrop-blur-sm text-xs px-2 py-1 rounded-full">
+                                    +{{ profile.interests|length - 4 }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Actions de swipe -->
+                        <div class="absolute top-4 right-4 z-10">
+                            <div class="flex flex-col space-y-2">
+                                <button onclick="swipeLike({{ profile.user.id }})" 
+                                        class="bg-white text-green-500 w-12 h-12 rounded-full shadow-lg hover:scale-110 transition duration-300">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <button onclick="swipePass({{ profile.user.id }})" 
+                                        class="bg-white text-red-500 w-12 h-12 rounded-full shadow-lg hover:scale-110 transition duration-300">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Indicateurs de swipe -->
+                    <div class="absolute inset-0 pointer-events-none">
+                        <div class="like-indicator absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-green-500 opacity-0 transition-opacity duration-300">
+                            ❤️
+                        </div>
+                        <div class="pass-indicator absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl font-bold text-red-500 opacity-0 transition-opacity duration-300">
+                            ✖️
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Actions de navigation -->
+            <div class="flex justify-center space-x-4 mt-6">
+                <button onclick="previousProfile()" 
+                        class="bg-gray-200 text-gray-600 w-12 h-12 rounded-full hover:bg-gray-300 transition duration-300">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="text-center">
+                    <div class="text-sm text-gray-600">Profil</div>
+                    <div class="font-semibold" id="profile-counter">1 / {{ profiles|length }}</div>
+                </div>
+                <button onclick="nextProfile()" 
+                        class="bg-gray-200 text-gray-600 w-12 h-12 rounded-full hover:bg-gray-300 transition duration-300">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Message quand tous les profils sont vus -->
+        <div id="no-more-profiles" class="hidden text-center py-12">
+            <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Vous avez vu tous les profils !</h3>
+            <p class="text-gray-500 mb-4">Essayez de modifier vos filtres ou revenez plus tard pour découvrir de nouvelles personnes.</p>
+            <button onclick="location.reload()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition duration-300">
+                <i class="fas fa-sync mr-2"></i>Recharger
+            </button>
+        </div>
+        
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Aucun profil trouvé</h3>
+            <p class="text-gray-500">Essayez de modifier vos filtres ou revenez plus tard</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de profil détaillé -->
+<div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-start mb-4">
+            <h3 class="text-2xl font-bold text-gray-900" id="modal-profile-name">Profil</h3>
+            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Photos -->
+            <div class="space-y-4">
+                <div class="relative">
+                    <img id="modal-profile-photo" src="" alt="Photo principale" 
+                         class="w-full h-64 object-cover rounded-lg">
+                </div>
+                <div class="relative" id="modal-second-photo-container" style="display: none;">
+                    <img id="modal-second-photo" src="" alt="Deuxième photo" 
+                         class="w-full h-32 object-cover rounded-lg">
+                </div>
+            </div>
+            
+            <!-- Informations -->
+            <div class="space-y-4">
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Informations personnelles</h4>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><strong>Âge :</strong> <span id="modal-profile-age"></span> ans</p>
+                        <p><strong>Ville :</strong> <span id="modal-profile-city"></span></p>
+                        <p><strong>Genre :</strong> <span id="modal-profile-gender"></span></p>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Bio</h4>
+                    <p id="modal-profile-bio" class="text-gray-600 text-sm"></p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Centres d'intérêt</h4>
+                    <div id="modal-profile-interests" class="flex flex-wrap gap-2"></div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex space-x-3 pt-4">
+                    <button onclick="swipePassFromModal()" 
+                            class="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition duration-300">
+                        <i class="fas fa-times mr-2"></i>Passer
+                    </button>
+                    <button onclick="swipeLikeFromModal()" 
+                            class="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition duration-300">
+                        <i class="fas fa-heart mr-2"></i>J'aime
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de match -->
+<div id="match-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+        <div class="text-6xl text-primary mb-4">
+            <i class="fas fa-heart"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-4">C'est un match !</h3>
+        <p class="text-gray-600 mb-6">Vous avez un nouveau match !</p>
+        <div class="flex space-x-4">
+            <button onclick="closeMatchModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg">
+                Continuer
+            </button>
+            <a href="{{ url_for('messages') }}" class="flex-1 bg-primary text-white py-2 rounded-lg">
+                Voir les messages
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentProfileIndex = 0;
+let profiles = [];
+let isAnimating = false;
+
+// Initialiser le swipe
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSwipe();
+    setupEventListeners();
+});
+
+function initializeSwipe() {
+    const profileCards = document.querySelectorAll('.profile-card');
+    profiles = Array.from(profileCards);
+    
+    // Masquer toutes les cartes sauf la première
+    profiles.forEach((card, index) => {
+        if (index === 0) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    updateProfileCounter();
+}
+
+function setupEventListeners() {
+    const container = document.getElementById('swipe-container');
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    container.addEventListener('touchstart', handleStart, { passive: true });
+    container.addEventListener('touchmove', handleMove, { passive: true });
+    container.addEventListener('touchend', handleEnd);
+    
+    container.addEventListener('mousedown', handleStart);
+    container.addEventListener('mousemove', handleMove);
+    container.addEventListener('mouseup', handleEnd);
+    container.addEventListener('mouseleave', handleEnd);
+
+    function handleStart(e) {
+        if (isAnimating) return;
+        
+        const touch = e.touches ? e.touches[0] : e;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        isDragging = true;
+        
+        const currentCard = getCurrentCard();
+        if (currentCard) {
+            currentCard.style.transition = 'none';
+        }
+    }
+
+    function handleMove(e) {
+        if (!isDragging || isAnimating) return;
+        
+        const touch = e.touches ? e.touches[0] : e;
+        currentX = touch.clientX - startX;
+        currentY = touch.clientY - startY;
+        
+        const currentCard = getCurrentCard();
+        if (currentCard) {
+            const rotate = currentX * 0.1;
+            currentCard.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotate}deg)`;
+            
+            // Afficher les indicateurs
+            const opacity = Math.min(Math.abs(currentX) / 200, 1);
+            if (currentX > 0) {
+                showLikeIndicator(opacity);
+            } else if (currentX < 0) {
+                showPassIndicator(opacity);
+            } else {
+                hideIndicators();
+            }
+        }
+    }
+
+    function handleEnd(e) {
+        if (!isDragging || isAnimating) return;
+        
+        isDragging = false;
+        const currentCard = getCurrentCard();
+        
+        if (currentCard) {
+            const threshold = 100;
+            
+            if (Math.abs(currentX) > threshold && Math.abs(currentY) < 100) {
+                if (currentX > 0) {
+                    // Swipe droit - like
+                    swipeRight(currentCard);
+                } else {
+                    // Swipe gauche - pass
+                    swipeLeft(currentCard);
+                }
+            } else {
+                // Retour à la position initiale
+                currentCard.style.transition = 'transform 0.3s ease';
+                currentCard.style.transform = '';
+                hideIndicators();
+            }
+        }
+    }
+}
+
+function getCurrentCard() {
+    if (currentProfileIndex < profiles.length) {
+        return profiles[currentProfileIndex];
+    }
+    return null;
+}
+
+function swipeLeft(card) {
+    animateCard(card, -100, 100, () => {
+        swipePass(card.dataset.profileId);
+    });
+}
+
+function swipeRight(card) {
+    animateCard(card, 100, -100, () => {
+        swipeLike(card.dataset.profileId);
+    });
+}
+
+function animateCard(card, x, y, callback) {
+    isAnimating = true;
+    card.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+    card.style.transform = `translateX(${x * 3}px) translateY(${y * 2}px) rotate(${x * 0.3}deg)`;
+    card.style.opacity = '0';
+    
+    setTimeout(() => {
+        card.style.display = 'none';
+        callback();
+        isAnimating = false;
+        showNextProfile();
+    }, 500);
+}
+
+function showNextProfile() {
+    currentProfileIndex++;
+    
+    if (currentProfileIndex < profiles.length) {
+        profiles[currentProfileIndex].style.display = 'block';
+        updateProfileCounter();
+    } else {
+        // Plus de profils
+        document.getElementById('no-more-profiles').classList.remove('hidden');
+    }
+}
+
+function updateProfileCounter() {
+    const counter = document.getElementById('profile-counter');
+    if (counter) {
+        counter.textContent = `${currentProfileIndex + 1} / ${profiles.length}`;
+    }
+}
+
+function showLikeIndicator(opacity) {
+    const indicator = document.querySelector('.like-indicator');
+    if (indicator) {
+        indicator.style.opacity = opacity;
+    }
+}
+
+function showPassIndicator(opacity) {
+    const indicator = document.querySelector('.pass-indicator');
+    if (indicator) {
+        indicator.style.opacity = opacity;
+    }
+}
+
+function hideIndicators() {
+    document.querySelector('.like-indicator').style.opacity = '0';
+    document.querySelector('.pass-indicator').style.opacity = '0';
+}
+
+// Fonctions de navigation manuelle
+function nextProfile() {
+    if (isAnimating) return;
+    
+    const currentCard = getCurrentCard();
+    if (currentCard) {
+        swipePass(currentCard.dataset.profileId);
+    }
+}
+
+function previousProfile() {
+    if (isAnimating || currentProfileIndex === 0) return;
+    
+    currentProfileIndex--;
+    profiles[currentProfileIndex].style.display = 'block';
+    profiles[currentProfileIndex].style.transition = 'transform 0.3s ease';
+    updateProfileCounter();
+    
+    // Masquer le profil suivant
+    if (currentProfileIndex < profiles.length - 1) {
+        profiles[currentProfileIndex + 1].style.display = 'none';
+    }
+    
+    // Masquer le message "plus de profils"
+    document.getElementById('no-more-profiles').classList.add('hidden');
+}
+
+// Fonctions d'action
+function swipeLike(profileId) {
+    // Lancer l'animation de feu d'artifice et le son immédiatement
+    const currentCard = document.querySelector('.profile-card:not(.hidden)');
+    if (currentCard) {
+        LikeFireworks.launchLikeAnimation(currentCard);
+        playLikeSound();
+        playSwipeSound('right');
+    }
+    
+    fetch('/api/like/' + profileId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.match) {
+                // Lancer une animation de match supplémentaire avec son
+                setTimeout(() => {
+                    if (currentCard) {
+                        LikeFireworks.launchMatchAnimation(currentCard);
+                        playMatchSound();
+                    }
+                    showMatchModal();
+                }, 1000);
+            }
+            hideIndicators();
+        } else {
+            console.error('Erreur:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
+}
+
+function swipePass(profileId) {
+    // Jouer le son du swipe
+    playSwipeSound('left');
+    
+    fetch('/api/pass/' + profileId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideIndicators();
+        } else {
+            console.error('Erreur:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+    });
+}
+
+// Actions depuis le modal
+function swipeLikeFromModal() {
+    if (currentProfileId) {
+        const currentCard = getCurrentCard();
+        if (currentCard) {
+            swipeRight(currentCard);
+        }
+        closeProfileModal();
+    }
+}
+
+function swipePassFromModal() {
+    if (currentProfileId) {
+        const currentCard = getCurrentCard();
+        if (currentCard) {
+            swipeLeft(currentCard);
+        }
+        closeProfileModal();
+    }
+}
+
+// Fonctions du modal (gardées pour la compatibilité)
+let currentProfileId = null;
+
+function viewProfile(profileId) {
+    currentProfileId = profileId;
+    
+    fetch('/api/user/' + profileId)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Non authentifié');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.user) {
+                populateProfileModal(data.user);
+                showProfileModal();
+            } else {
+                console.error('Erreur: données utilisateur manquantes');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement du profil:', error);
+            // Optionnel: afficher un message à l'utilisateur
+            alert('Impossible de charger le profil. Veuillez vous reconnecter.');
+        });
+}
+
+function populateProfileModal(user) {
+    document.getElementById('modal-profile-name').textContent = user.first_name + ' ' + user.last_name;
+    document.getElementById('modal-profile-age').textContent = user.age;
+    document.getElementById('modal-profile-city').textContent = user.city;
+    document.getElementById('modal-profile-gender').textContent = user.gender;
+    document.getElementById('modal-profile-bio').textContent = user.bio || 'Aucune bio disponible';
+    
+    const profilePhoto = document.getElementById('modal-profile-photo');
+    if (user.profile_photo) {
+        profilePhoto.src = '/static/uploads/' + user.profile_photo;
+        profilePhoto.style.display = 'block';
+    } else {
+        profilePhoto.style.display = 'none';
+    }
+    
+    const secondPhotoContainer = document.getElementById('modal-second-photo-container');
+    const secondPhoto = document.getElementById('modal-second-photo');
+    if (user.second_photo) {
+        secondPhoto.src = '/static/uploads/' + user.second_photo;
+        secondPhotoContainer.style.display = 'block';
+    } else {
+        secondPhotoContainer.style.display = 'none';
+    }
+    
+    const interestsContainer = document.getElementById('modal-profile-interests');
+    interestsContainer.innerHTML = '';
+    if (user.interests && user.interests.length > 0) {
+        user.interests.forEach(interest => {
+            const interestSpan = document.createElement('span');
+            interestSpan.className = 'bg-primary bg-opacity-10 text-primary text-xs px-2 py-1 rounded-full';
+            interestSpan.textContent = interest.name;
+            interestsContainer.appendChild(interestSpan);
+        });
+    } else {
+        interestsContainer.innerHTML = '<span class="text-gray-500">Aucun centre d\'intérêt</span>';
+    }
+}
+
+function showProfileModal() {
+    document.getElementById('profile-modal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+    document.getElementById('profile-modal').classList.add('hidden');
+    currentProfileId = null;
+}
+
+function showMatchModal() {
+    document.getElementById('match-modal').classList.remove('hidden');
+}
+
+function closeMatchModal() {
+    document.getElementById('match-modal').classList.add('hidden');
+}
+
+// Fermer les modals en cliquant à l'extérieur
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('profile-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeProfileModal();
+        }
+    });
+    
+    document.getElementById('match-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeMatchModal();
+        }
+    });
+});
+</script>
+{% endblock %}

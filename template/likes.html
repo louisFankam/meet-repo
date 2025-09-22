@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+
+{% block title %}Qui m'a liké ? - Meet{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- En-tête -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Qui m'a liké ?</h1>
+            <p class="text-gray-600">Découvrez les personnes intéressées par votre profil</p>
+            <div class="mt-4">
+                <span class="bg-pink-500 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    {{ received_likes|length }} personne{{ 's' if received_likes|length > 1 else '' }} vous a liké
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {% if received_likes %}
+    <!-- Grille des likes reçus -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for like_data in received_likes %}
+        {% set like = like_data.like %}
+        {% set user = like_data.user %}
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 like-card" data-user-id="{{ user.id }}">
+            <!-- Photo de profil -->
+            <div class="relative h-48 bg-gray-200">
+                {% if user.profile_photo %}
+                <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" 
+                     alt="Photo de {{ user.first_name }}" 
+                     class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fas fa-user text-6xl text-gray-400"></i>
+                </div>
+                {% endif %}
+                
+                <!-- Badge de like -->
+                <div class="absolute top-3 left-3 bg-pink-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    <i class="fas fa-heart mr-1"></i>A liké votre profil
+                </div>
+                
+                <!-- Date du like -->
+                <div class="absolute top-3 right-3 bg-white bg-opacity-90 px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                    {{ like.created_at|timeago }}
+                </div>
+            </div>
+            
+            <!-- Informations du profil -->
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">
+                        {{ user.first_name }}, {{ user.age }}
+                    </h3>
+                    <span class="text-gray-500 text-sm">
+                        <i class="fas fa-map-marker-alt mr-1"></i>{{ user.city }}
+                    </span>
+                </div>
+                
+                {% if user.bio %}
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ user.bio }}</p>
+                {% endif %}
+                
+                <!-- Centres d'intérêt -->
+                {% if user.interests %}
+                <div class="flex flex-wrap gap-2 mb-6">
+                    {% for interest in user.interests[:3] %}
+                    <span class="bg-pink-100 text-pink-700 text-xs px-2 py-1 rounded-full">
+                        {{ interest.name }}
+                    </span>
+                    {% endfor %}
+                    {% if user.interests|length > 3 %}
+                    <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                        +{{ user.interests|length - 3 }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="flex space-x-3">
+                    <button onclick="likeBack({{ user.id }})" 
+                            class="flex-1 bg-pink-500 text-white py-2 px-4 rounded-lg hover:bg-pink-600 transition duration-300 text-center like-back-btn">
+                        <i class="fas fa-heart mr-2"></i>Liker en retour
+                    </button>
+                    <button onclick="viewProfile({{ user.id }})" 
+                            class="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition duration-300">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <button onclick="passUser({{ user.id }})" 
+                            class="bg-red-100 text-red-600 py-2 px-4 rounded-lg hover:bg-red-200 transition duration-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- Aucun like reçu -->
+    <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-6">
+            <i class="fas fa-heart"></i>
+        </div>
+        <h3 class="text-2xl font-semibold text-gray-600 mb-4">Personne ne vous a encore liké</h3>
+        <p class="text-gray-500 mb-8">
+            Continuez à optimiser votre profil et à être actif sur l'application. 
+            Les likes arriveront bientôt !
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{{ url_for('dashboard') }}" 
+               class="bg-pink-500 text-white px-6 py-3 rounded-lg hover:bg-pink-600 transition duration-300">
+                <i class="fas fa-search mr-2"></i>Découvrir des profils
+            </a>
+            
+            <a href="{{ url_for('profile', user_id=current_user.id) }}" 
+               class="border-2 border-pink-500 text-pink-500 px-6 py-3 rounded-lg hover:bg-pink-500 hover:text-white transition duration-300">
+                <i class="fas fa-user-edit mr-2"></i>Améliorer mon profil
+            </a>
+        </div>
+        
+        <!-- Conseils pour attirer plus de likes -->
+        <div class="mt-12 bg-gray-50 rounded-lg p-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">💡 Conseils pour attirer plus de likes</h4>
+            <div class="grid md:grid-cols-2 gap-4 text-left">
+                <div>
+                    <h5 class="font-medium text-gray-800 mb-2">📸 Photos variées</h5>
+                    <p class="text-sm text-gray-600">Montrez différents aspects de votre personnalité</p>
+                </div>
+                <div>
+                    <h5 class="font-medium text-gray-800 mb-2">✍️ Bio authentique</h5>
+                    <p class="text-sm text-gray-600">Soyez vous-même et partagez vos passions</p>
+                </div>
+                <div>
+                    <h5 class="font-medium text-gray-800 mb-2">🎯 Intérêts précis</h5>
+                    <p class="text-sm text-gray-600">Sélectionnez des centres d'intérêt spécifiques</p>
+                </div>
+                <div>
+                    <h5 class="font-medium text-gray-800 mb-2">🔄 Activité régulière</h5>
+                    <p class="text-sm text-gray-600">Connectez-vous souvent pour apparaître dans les suggestions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de profil rapide -->
+<div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+        <div class="text-center">
+            <div id="profile-photo" class="w-24 h-24 rounded-full mx-auto mb-4 bg-gray-200"></div>
+            <h3 id="profile-name" class="text-xl font-bold text-gray-900 mb-2"></h3>
+            <p id="profile-age-city" class="text-gray-600 mb-4"></p>
+            <p id="profile-bio" class="text-gray-700 mb-4"></p>
+            <div id="profile-interests" class="flex flex-wrap gap-2 justify-center mb-4"></div>
+            <button onclick="closeProfileModal()" class="bg-pink-500 text-white px-6 py-2 rounded-lg">
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification de match -->
+<div id="match-notification" class="hidden fixed top-4 right-4 bg-green-500 text-white p-6 rounded-lg shadow-lg z-50 max-w-sm">
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            <i class="fas fa-heart text-2xl"></i>
+        </div>
+        <div class="ml-3">
+            <h4 class="font-semibold">Nouveau match !</h4>
+            <p class="text-sm">Vous avez matché avec <span id="match-name"></span></p>
+        </div>
+    </div>
+    <div class="mt-3 flex space-x-2">
+        <button onclick="goToMatches()" class="bg-white text-green-500 px-3 py-1 rounded text-sm font-medium">
+            Voir les matches
+        </button>
+        <button onclick="closeMatchNotification()" class="bg-green-600 text-white px-3 py-1 rounded text-sm">
+            Plus tard
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewProfile(userId) {
+    // Charger les informations du profil et afficher le modal
+    fetch('/api/user/' + userId)
+        .then(response => response.json())
+        .then(user => {
+            document.getElementById('profile-name').textContent = user.first_name + ', ' + user.age + ' ans';
+            document.getElementById('profile-age-city').textContent = user.city;
+            document.getElementById('profile-bio').textContent = user.bio || 'Aucune bio disponible';
+            
+            // Afficher les centres d'intérêt
+            const interestsContainer = document.getElementById('profile-interests');
+            interestsContainer.innerHTML = '';
+            if (user.interests) {
+                user.interests.forEach(interest => {
+                    const span = document.createElement('span');
+                    span.className = 'bg-pink-100 text-pink-700 text-xs px-2 py-1 rounded-full';
+                    span.textContent = interest.name;
+                    interestsContainer.appendChild(span);
+                });
+            }
+            
+            // Afficher la photo si disponible
+            const photoContainer = document.getElementById('profile-photo');
+            if (user.profile_photo) {
+                photoContainer.innerHTML = `<img src="/static/uploads/${user.profile_photo}" class="w-24 h-24 rounded-full object-cover">`;
+            } else {
+                photoContainer.innerHTML = '<i class="fas fa-user text-4xl text-gray-400 flex items-center justify-center h-full"></i>';
+            }
+            
+            document.getElementById('profile-modal').classList.remove('hidden');
+        });
+}
+
+function closeProfileModal() {
+    document.getElementById('profile-modal').classList.add('hidden');
+}
+
+function likeBack(userId) {
+    const card = document.querySelector(`[data-user-id="${userId}"]`);
+    const button = card.querySelector('.like-back-btn');
+    
+    // Lancer l'animation de feu d'artice et le son immédiatement !
+    LikeFireworks.launchLikeAnimation(card);
+    playLikeSound();
+    
+    // Animation de chargement
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>En cours...';
+    button.disabled = true;
+    
+    fetch('/api/like/' + userId, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Animation de succès
+            card.style.transform = 'scale(0.95)';
+            card.style.opacity = '0.5';
+            
+            if (data.match) {
+                // C'est un match ! Lancer une animation de match supplémentaire avec son
+                setTimeout(() => {
+                    LikeFireworks.launchMatchAnimation(card);
+                    playMatchSound();
+                    playNotificationSound();
+                    document.getElementById('match-name').textContent = card.querySelector('h3').textContent.split(',')[0];
+                    showMatchNotification();
+                }, 800);
+            }
+            
+            // Retirer la carte après un délai
+            setTimeout(() => {
+                card.style.transform = 'translateY(-20px)';
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.remove();
+                    checkIfEmpty();
+                }, 300);
+            }, 1500);
+        } else {
+            showFlashMessage(data.error || 'Erreur lors du like', 'error');
+            button.innerHTML = '<i class="fas fa-heart mr-2"></i>Liker en retour';
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showFlashMessage('Erreur lors du like', 'error');
+        button.innerHTML = '<i class="fas fa-heart mr-2"></i>Liker en retour';
+        button.disabled = false;
+    });
+}
+
+function passUser(userId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce like ? Cette personne ne pourra plus vous matcher.')) {
+        const card = document.querySelector(`[data-user-id="${userId}"]`);
+        const button = card.querySelector('button:last-child');
+        
+        // Jouer un son de swipe
+        playSwipeSound('left');
+        
+        // Animation de chargement
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        fetch('/api/remove-like/' + userId, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Animation de sortie
+                card.style.transform = 'translateX(100px)';
+                card.style.opacity = '0';
+                
+                setTimeout(() => {
+                    card.remove();
+                    checkIfEmpty();
+                    
+                    // Mettre à jour le compteur de likes
+                    updateLikesCount();
+                }, 300);
+                
+                showFlashMessage('Like supprimé avec succès', 'success');
+            } else {
+                showFlashMessage(data.error || 'Erreur lors de la suppression', 'error');
+                button.innerHTML = '<i class="fas fa-times"></i>';
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showFlashMessage('Erreur lors de la suppression', 'error');
+            button.innerHTML = '<i class="fas fa-times"></i>';
+            button.disabled = false;
+        });
+    }
+}
+
+function showMatchNotification() {
+    const notification = document.getElementById('match-notification');
+    notification.classList.remove('hidden');
+    notification.style.transform = 'translateX(100%)';
+    notification.style.opacity = '0';
+    
+    // Animation d'entrée
+    setTimeout(() => {
+        notification.style.transition = 'all 0.3s ease';
+        notification.style.transform = 'translateX(0)';
+        notification.style.opacity = '1';
+    }, 100);
+}
+
+function closeMatchNotification() {
+    const notification = document.getElementById('match-notification');
+    notification.style.transition = 'all 0.3s ease';
+    notification.style.transform = 'translateX(100%)';
+    notification.style.opacity = '0';
+    
+    setTimeout(() => {
+        notification.classList.add('hidden');
+    }, 300);
+}
+
+function goToMatches() {
+    window.location.href = '/matches';
+}
+
+function checkIfEmpty() {
+    const remainingCards = document.querySelectorAll('.like-card');
+    if (remainingCards.length === 0) {
+        // Recharger la page pour afficher le message "aucun like"
+        location.reload();
+    }
+}
+
+// Fonction pour afficher les messages flash (si elle n'existe pas déjà)
+function showFlashMessage(message, type) {
+    const flashDiv = document.createElement('div');
+    flashDiv.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    flashDiv.textContent = message;
+    document.body.appendChild(flashDiv);
+    
+    setTimeout(() => {
+        flashDiv.remove();
+    }, 3000);
+}
+
+// Fonction pour mettre à jour le compteur de likes (depuis base.html)
+function updateLikesCount() {
+    fetch('/api/likes-received')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const likesCount = data.count;
+                const desktopBadge = document.getElementById('likes-count');
+                const mobileBadge = document.getElementById('mobile-likes-count');
+                
+                if (likesCount > 0) {
+                    if (desktopBadge) {
+                        desktopBadge.textContent = likesCount;
+                        desktopBadge.classList.remove('hidden');
+                    }
+                    if (mobileBadge) {
+                        mobileBadge.textContent = likesCount;
+                        mobileBadge.classList.remove('hidden');
+                    }
+                } else {
+                    if (desktopBadge) desktopBadge.classList.add('hidden');
+                    if (mobileBadge) mobileBadge.classList.add('hidden');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la récupération des likes reçus:', error);
+        });
+}
+</script>
+{% endblock %}

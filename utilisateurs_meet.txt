@@ -1,0 +1,27 @@
+Database URL from env: mysql+pymysql://root:@localhost/meet_db
+IDENTIFIANTS UTILISATEURS - APPLICATION MEET
+==================================================
+ID: 1 | Nom: Dominique Louis Fankam youaleu | Email: Dominiquelouis15+1@gmail.com | Genre: homme | Âge: 24 | Ville: Bamako
+ID: 2 | Nom: Emma Dubois | Email: emma.dubois@test.com | Genre: Femme | Âge: 25 | Ville: Paris
+ID: 3 | Nom: Léa Martin | Email: lea.martin@test.com | Genre: Femme | Âge: 28 | Ville: Lyon
+ID: 4 | Nom: Chloé Bernard | Email: chloe.bernard@test.com | Genre: Femme | Âge: 23 | Ville: Marseille
+ID: 5 | Nom: Jade Petit | Email: jade.petit@test.com | Genre: Femme | Âge: 26 | Ville: Bordeaux
+ID: 6 | Nom: Zoé Robert | Email: zoe.robert@test.com | Genre: Femme | Âge: 24 | Ville: Nantes
+ID: 7 | Nom: Lucas Moreau | Email: lucas.moreau@test.com | Genre: Homme | Âge: 27 | Ville: Paris
+ID: 8 | Nom: Hugo Leroy | Email: hugo.leroy@test.com | Genre: Homme | Âge: 29 | Ville: Lille
+ID: 9 | Nom: Nathan Simon | Email: nathan.simon@test.com | Genre: Homme | Âge: 25 | Ville: Strasbourg
+ID: 10 | Nom: Théo Michel | Email: theo.michel@test.com | Genre: Homme | Âge: 26 | Ville: Toulouse
+ID: 11 | Nom: Ethan Garcia | Email: ethan.garcia@test.com | Genre: Homme | Âge: 24 | Ville: Nice
+ID: 12 | Nom: Sophie Martin | Email: sophie@example.com | Genre: Femme | Âge: 30 | Ville: Paris
+ID: 13 | Nom: Thomas Dubois | Email: thomas@example.com | Genre: Homme | Âge: 33 | Ville: Paris
+ID: 14 | Nom: Emma Bernard | Email: emma@example.com | Genre: Femme | Âge: 27 | Ville: Lyon
+ID: 15 | Nom: Test User | Email: test@test.com | Genre: homme | Âge: 35 | Ville: Paris
+ID: 16 | Nom: New User | Email: newuser@test.com | Genre: homme | Âge: 30 | Ville: Lyon
+ID: 17 | Nom: User One | Email: user1@test.com | Genre: homme | Âge: 35 | Ville: Paris
+ID: 18 | Nom: User Two | Email: user2@test.com | Genre: femme | Âge: 33 | Ville: Paris
+ID: 20 | Nom: Marie Dupont | Email: marie@test.com | Genre: femme | Âge: 30 | Ville: Paris
+ID: 21 | Nom: Lucie Martin | Email: lucie@test.com | Genre: femme | Âge: 33 | Ville: Lyon
+ID: 22 | Nom: Camille Bernard | Email: camille@test.com | Genre: femme | Âge: 26 | Ville: Marseille
+ID: 23 | Nom: Julie Rousseau | Email: julie@test.com | Genre: femme | Âge: 30 | Ville: Paris
+==================================================
+Total: 22 utilisateurs

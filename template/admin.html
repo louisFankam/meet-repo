@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Administration - Meet{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- En-tête -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-shield-alt text-primary mr-3"></i>
+            Administration
+        </h1>
+        <p class="text-gray-600">Gérez votre application de rencontre</p>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-users text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Utilisateurs</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-heart text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Matches</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_matches }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <i class="fas fa-envelope text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Messages</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_messages }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                    <i class="fas fa-comments text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Conversations</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ active_conversations }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Utilisateurs récents -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                <i class="fas fa-users text-primary mr-2"></i>
+                Utilisateurs récents
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Utilisateur
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ville
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Inscription
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for user in recent_users %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if user.profile_photo %}
+                                <img class="h-10 w-10 rounded-full object-cover" src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Photo de profil">
+                                {% else %}
+                                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-600"></i>
+                                </div>
+                                {% endif %}
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ user.first_name }} {{ user.last_name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">{{ user.age }} ans</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ user.email }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ user.city }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ user.created_at.strftime('%d/%m/%Y') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Messages récents -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                <i class="fas fa-envelope text-primary mr-2"></i>
+                Messages récents
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            De
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            À
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Message
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Expire
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for message in recent_messages %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ message.sender.first_name }} {{ message.sender.last_name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ message.receiver.first_name }} {{ message.receiver.last_name }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <div class="max-w-xs truncate">
+                                {{ message.content }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ message.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ message.expires_at.strftime('%d/%m/%Y %H:%M') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Actions d'administration -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-tools text-primary mr-2"></i>
+            Actions d'administration
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button onclick="cleanupData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center">
+                <i class="fas fa-broom mr-2"></i>
+                Nettoyer les données expirées
+            </button>
+            <button onclick="exportData()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center justify-center">
+                <i class="fas fa-download mr-2"></i>
+                Exporter les données
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-4" id="confirmTitle">Confirmation</h3>
+            <p class="text-sm text-gray-500 mb-6" id="confirmMessage">Êtes-vous sûr de vouloir continuer ?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirmYes" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+                    Oui
+                </button>
+                <button id="confirmNo" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md">
+                    Non
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function cleanupData() {
+    showConfirmModal(
+        'Nettoyer les données expirées',
+        'Cette action supprimera tous les messages et notifications expirés. Continuer ?',
+        () => {
+            fetch('/api/cleanup', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erreur lors du nettoyage');
+                    }
+                });
+        }
+    );
+}
+
+function exportData() {
+    showConfirmModal(
+        'Exporter les données',
+        'Cette action créera un fichier CSV avec toutes les données. Continuer ?',
+        () => {
+            window.open('/api/export-data', '_blank');
+        }
+    );
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmModal').classList.remove('hidden');
+    
+    document.getElementById('confirmYes').onclick = () => {
+        document.getElementById('confirmModal').classList.add('hidden');
+        onConfirm();
+    };
+    
+    document.getElementById('confirmNo').onclick = () => {
+        document.getElementById('confirmModal').classList.add('hidden');
+    };
+}
+
+// Fermer le modal en cliquant à l'extérieur
+document.getElementById('confirmModal').onclick = function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+};
+</script>
+{% endblock %}

@@ -28,13 +28,24 @@ document.addEventListener('DOMContentLoaded', function() {
 // Charger les notifications depuis l'API
 function loadNotifications() {
     fetch('/api/notifications')
-        .then(response => response.json())
+        .then(response => {
+            if (response.redirected) {
+                // L'utilisateur n'est pas connecté, ne pas afficher d'erreur
+                return null;
+            }
+            return response.json();
+        })
         .then(data => {
-            updateNotificationCount(data.notifications.length);
-            displayNotifications(data.notifications);
+            if (data) {
+                updateNotificationCount(data.notifications.length);
+                displayNotifications(data.notifications);
+            }
         })
         .catch(error => {
-            console.error('Erreur lors du chargement des notifications:', error);
+            // Ne pas afficher d'erreur si l'utilisateur n'est pas connecté
+            if (!error.message.includes('Unexpected token')) {
+                console.error('Erreur lors du chargement des notifications:', error);
+            }
         });
 }
 

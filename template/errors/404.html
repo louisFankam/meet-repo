@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Page non trouvée - Meet{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="display-1 text-danger">404</h1>
+                    <h2 class="card-title">Page non trouvée</h2>
+                    <p class="card-text">La page que vous cherchez n'existe pas ou a été déplacée.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <i class="fas fa-home"></i> Retour à l'accueil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
