@@ -1,0 +1,238 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Analytics - Administration Meet{% endblock %}
+
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Sélecteur de période -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900">Période d'analyse</h2>
+                <p class="text-gray-600">Sélectionnez la période pour afficher les statistiques</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('admin_analytics', days=7) }}" 
+                   class="px-4 py-2 rounded-lg {% if days == 7 %}bg-admin-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% %} transition duration-300">
+                    7 jours
+                </a>
+                <a href="{{ url_for('admin_analytics', days=30) }}" 
+                   class="px-4 py-2 rounded-lg {% if days == 30 %}bg-admin-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% %} transition duration-300">
+                    30 jours
+                </a>
+                <a href="{{ url_for('admin_analytics', days=90) }}" 
+                   class="px-4 py-2 rounded-lg {% if days == 90 %}bg-admin-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% %} transition duration-300">
+                    90 jours
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques principales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-user-plus text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Nouveaux utilisateurs</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ activity_stats.daily_users|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-envelope text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Messages envoyés</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ activity_stats.daily_messages.values()|list|sum }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <i class="fas fa-heart text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Nouveaux matches</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ activity_stats.daily_matches.values()|list|sum }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                    <i class="fas fa-thumbs-up text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Likes donnés</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ activity_stats.daily_likes.values()|list|sum }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques et tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Croissance des utilisateurs -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-chart-line text-admin-600 mr-2"></i>
+                    Croissance des utilisateurs
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    {% if activity_stats.daily_users %}
+                        {% for date, count in activity_stats.daily_users.items() %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">{{ date }}</span>
+                            <div class="flex items-center">
+                                <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                                    {% set max_users = activity_stats.daily_users.values()|list|max %}
+                                    {% set width = (count / max_users * 100) if max_users > 0 else 0 %}
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: {{ width | round(1) }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 w-8">{{ count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">Aucune donnée disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Activité des messages -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-comments text-admin-600 mr-2"></i>
+                    Activité des messages
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    {% if activity_stats.daily_messages %}
+                        {% for date, count in activity_stats.daily_messages.items() %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">{{ date }}</span>
+                            <div class="flex items-center">
+                                <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                                    {% set max_messages = activity_stats.daily_messages.values()|list|max %}
+                                    {% set width = (count / max_messages * 100) if max_messages > 0 else 0 %}
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: {{ width | round(1) }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 w-8">{{ count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">Aucune donnée disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Matches par jour -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-heart text-admin-600 mr-2"></i>
+                    Matches par jour
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    {% if activity_stats.daily_matches %}
+                        {% for date, count in activity_stats.daily_matches.items() %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">{{ date }}</span>
+                            <div class="flex items-center">
+                                <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                                    {% set max_matches = activity_stats.daily_matches.values()|list|max %}
+                                    {% set width = (count / max_matches * 100) if max_matches > 0 else 0 %}
+                                    <div class="bg-purple-600 h-2 rounded-full" style="width: {{ width | round(1) }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 w-8">{{ count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">Aucune donnée disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Likes par jour -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-thumbs-up text-admin-600 mr-2"></i>
+                    Likes par jour
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4 max-h-96 overflow-y-auto">
+                    {% if activity_stats.daily_likes %}
+                        {% for date, count in activity_stats.daily_likes.items() %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">{{ date }}</span>
+                            <div class="flex items-center">
+                                <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                                    {% set max_likes = activity_stats.daily_likes.values()|list|max %}
+                                    {% set width = (count / max_likes * 100) if max_likes > 0 else 0 %}
+                                    <div class="bg-orange-600 h-2 rounded-full" style="width: {{ width | round(1) }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-900 w-8">{{ count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">Aucune donnée disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Résumé de la période -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-chart-bar text-admin-600 mr-2"></i>
+            Résumé des {{ days }} derniers jours
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600">{{ activity_stats.daily_users|length }}</div>
+                <div class="text-sm text-gray-600">Jours avec nouveaux utilisateurs</div>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="text-2xl font-bold text-green-600">{{ activity_stats.daily_messages.values()|list|sum }}</div>
+                <div class="text-sm text-gray-600">Total messages</div>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <div class="text-2xl font-bold text-purple-600">{{ activity_stats.daily_matches.values()|list|sum }}</div>
+                <div class="text-sm text-gray-600">Total matches</div>
+            </div>
+            <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <div class="text-2xl font-bold text-orange-600">{{ activity_stats.daily_likes.values()|list|sum }}</div>
+                <div class="text-sm text-gray-600">Total likes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

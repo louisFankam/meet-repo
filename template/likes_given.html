@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Likes - Meet{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Mes likes</h1>
+                <p class="text-gray-600">Les profils que vous avez likés</p>
+            </div>
+            <a href="{{ url_for('likes') }}" class="text-sm text-primary hover:text-primary-dark">Voir les likes reçus</a>
+        </div>
+    </div>
+
+    {% if given_likes %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in given_likes %}
+        {% set like = item.like %}
+        {% set user = item.user %}
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="relative h-48 bg-gray-200">
+                {% if user.profile_photo %}
+                <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" class="w-full h-full object-cover" alt="{{ user.first_name }}">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fas fa-user text-6xl text-gray-400"></i>
+                </div>
+                {% endif %}
+                <div class="absolute top-3 left-3 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    <i class="fas fa-heart mr-1"></i>Vous avez liké
+                </div>
+                <div class="absolute top-3 right-3 bg-white bg-opacity-90 px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                    {{ like.created_at|timeago }}
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">{{ user.first_name }}, {{ user.age }}</h3>
+                    <span class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i>{{ user.city }}</span>
+                </div>
+                {% if user.bio %}
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ user.bio }}</p>
+                {% endif %}
+                {% if user.interests %}
+                <div class="flex flex-wrap gap-2 mb-6">
+                    {% for interest in user.interests[:3] %}
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">{{ interest.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="flex space-x-3">
+                    {% if item.is_match %}
+                    <a href="{{ url_for('messages') }}?user={{ user.id }}" class="flex-1 bg-green-500 text-white py-2 px-4 rounded-lg text-center">
+                        <i class="fas fa-comments mr-2"></i>Message
+                    </a>
+                    {% else %}
+                    <button onclick="removeGivenLike({{ user.id }})" class="flex-1 bg-red-100 text-red-600 py-2 px-4 rounded-lg hover:bg-red-200 transition"> 
+                        <i class="fas fa-times mr-2"></i>Retirer le like
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('profile', user_id=user.id) }}" class="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200">
+                        <i class="fas fa-user"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div class="text-6xl text-gray-300 mb-6"><i class="fas fa-heart"></i></div>
+        <h3 class="text-2xl font-semibold text-gray-600 mb-4">Vous n'avez liké personne pour l'instant</h3>
+        <a href="{{ url_for('dashboard') }}" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition">
+            Découvrir des profils
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function removeGivenLike(userId) {
+    if (!confirm('Retirer ce like ?')) return;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('/api/remove-like/' + userId, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert(data.error || 'Erreur');
+    })
+    .catch(() => alert('Erreur réseau'));
+}
+</script>
+{% endblock %}
+
+

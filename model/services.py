@@ -7,7 +7,9 @@ Logique métier séparée des routes
 from .models import User, Message, Like, Match, Notification, Interest, UserInterest
 from .database import db
 from .extensions import get_timezone_aware_datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
+from sqlalchemy import exists
+from sqlalchemy.exc import IntegrityError
 from PIL import Image
 import os
 import logging
@@ -166,9 +168,13 @@ class UserService:
             if interest:
                 query = query.join(UserInterest).join(Interest).filter(Interest.name == interest)
             
-            # Exclure les profils déjà likés
-            liked_users = db.session.query(Like.liked_id).filter(Like.liker_id == current_user.id)
-            query = query.filter(~User.id.in_(liked_users))
+            # Exclure les profils déjà likés (NOT EXISTS)
+            like_exists = (
+                db.session.query(Like.id)
+                .filter(Like.liker_id == current_user.id, Like.liked_id == User.id)
+                .exists()
+            )
+            query = query.filter(~like_exists)
             
             # Limiter les résultats
             return query.limit(limit).all()
@@ -179,14 +185,46 @@ class UserService:
     
     @staticmethod
     def save_photo(file, user_id, photo_type):
-        """Sauvegarde une photo de profil"""
+        """Sauvegarde une photo de profil avec sécurité renforcée"""
         try:
-            if file and UserService.allowed_file(file.filename):
-                # Générer un nom de fichier unique
-                filename = f"{user_id}_{photo_type}_{int(get_timezone_aware_datetime().timestamp())}.jpg"
-                filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            if not file or not UserService.allowed_file(file.filename):
+                logger.error(f"Fichier non autorisé: {file.filename if file else 'None'}")
+                return None
                 
-                # Ouvrir et redimensionner l'image
+            # Vérifier la taille du fichier (max 10MB)
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)
+            
+            if file_size > 10 * 1024 * 1024:  # 10MB
+                logger.error(f"Fichier trop volumineux: {file_size} bytes")
+                return None
+            
+            # Vérifier le type MIME réel du fichier
+            import mimetypes
+            mime_type, _ = mimetypes.guess_type(file.filename)
+            if mime_type not in ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']:
+                logger.error(f"Type MIME non autorisé: {mime_type}")
+                return None
+            
+            # Générer un nom de fichier unique et sécurisé
+            import secrets
+            random_token = secrets.token_hex(8)
+            filename = f"{user_id}_{photo_type}_{random_token}.jpg"
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            
+            # Vérifier que le chemin est bien dans le dossier uploads
+            if not os.path.abspath(filepath).startswith(os.path.abspath(current_app.config['UPLOAD_FOLDER'])):
+                logger.error("Tentative de path traversal détectée")
+                return None
+            
+            # Ouvrir et valider l'image
+            try:
+                image = Image.open(file)
+                # Vérifier que c'est bien une image
+                image.verify()
+                # Rouvrir l'image après verification
+                file.seek(0)
                 image = Image.open(file)
                 image = image.convert('RGB')
                 
@@ -194,10 +232,20 @@ class UserService:
                 max_size = (800, 800)
                 image.thumbnail(max_size, Image.Resampling.LANCZOS)
                 
-                # Sauvegarder
-                image.save(filepath, 'JPEG', quality=85)
+                # Sauvegarder avec des métadonnées minimales
+                image.save(filepath, 'JPEG', quality=85, optimize=True)
+                
+                # Vérifier que le fichier a bien été créé
+                if not os.path.exists(filepath):
+                    logger.error("Le fichier n'a pas été créé correctement")
+                    return None
+                    
+                logger.info(f"Photo sauvegardée avec succès: {filename}")
                 return filename
-            return None
+                
+            except Exception as img_error:
+                logger.error(f"Fichier image invalide: {img_error}")
+                return None
             
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde de la photo: {e}")
@@ -206,7 +254,22 @@ class UserService:
     @staticmethod
     def allowed_file(filename):
         """Vérifie si l'extension du fichier est autorisée"""
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+        if not filename or '.' not in filename:
+            return False
+        
+        # Extensions autorisées
+        ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        
+        # Vérifier l'extension
+        extension = filename.rsplit('.', 1)[1].lower()
+        if extension not in ALLOWED_EXTENSIONS:
+            return False
+            
+        # Vérifier que le nom de fichier ne contient pas de caractères suspects
+        if '..' in filename or '/' in filename or '\\' in filename:
+            return False
+            
+        return True
 
 
 class LikeService:
@@ -231,13 +294,17 @@ class LikeService:
             
             if mutual_like:
                 is_match = True
-                # Créer le match
-                match = Match(user1_id=min(liker_id, liked_id), user2_id=max(liker_id, liked_id))
-                db.session.add(match)
+                # Créer le match en gérant une éventuelle concurrence
+                try:
+                    match = Match(user1_id=min(liker_id, liked_id), user2_id=max(liker_id, liked_id))
+                    db.session.add(match)
+                except IntegrityError:
+                    db.session.rollback()
+                    # Le match existe déjà, continuer sans erreur
                 
-                # Créer les notifications
-                NotificationService.create_notification(liked_id, f"Vous avez un nouveau match !", 'match')
-                NotificationService.create_notification(liker_id, f"Vous avez un nouveau match !", 'match')
+                # Créer les notifications (ne pas commit ici)
+                NotificationService.create_notification(liked_id, "Vous avez un nouveau match !", 'match')
+                NotificationService.create_notification(liker_id, "Vous avez un nouveau match !", 'match')
             
             db.session.commit()
             
@@ -259,11 +326,35 @@ class LikeService:
                 db.session.commit()
                 return True
             return False
-            
         except Exception as e:
             logger.error(f"Erreur lors de la suppression du like: {e}")
             db.session.rollback()
             return False
+    @staticmethod
+    def get_given_likes(user_id):
+        """Récupère tous les likes donnés par un utilisateur"""
+        try:
+            given_likes = Like.query.filter_by(liker_id=user_id).all()
+            likes_data = []
+            for like in given_likes:
+                # Vérifier si c'est un match mutuel ou déjà un match
+                mutual_like = Like.query.filter_by(liker_id=like.liked_id, liked_id=user_id).first()
+                existing_match = Match.query.filter(
+                    ((Match.user1_id == user_id) & (Match.user2_id == like.liked_id)) |
+                    ((Match.user1_id == like.liked_id) & (Match.user2_id == user_id))
+                ).first()
+                liked_user = User.query.get(like.liked_id)
+                if liked_user:
+                    likes_data.append({
+                        'like': like,
+                        'user': liked_user,
+                        'is_match': bool(mutual_like or existing_match)
+                    })
+            likes_data.sort(key=lambda x: x['like'].created_at, reverse=True)
+            return likes_data
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des likes donnés: {e}")
+            return []
 
 
 class MessageService:
@@ -292,10 +383,9 @@ class MessageService:
             )
             
             db.session.add(message)
+            # Créer une notification (sans commit interne)
+            NotificationService.create_notification(receiver_id, "Vous avez reçu un nouveau message", 'message')
             db.session.commit()
-            
-            # Créer une notification
-            NotificationService.create_notification(receiver_id, f"Vous avez reçu un nouveau message", 'message')
             
             logger.info(f"Message envoyé: {sender_id} -> {receiver_id}")
             return message
@@ -356,14 +446,10 @@ class MessageService:
         """Supprime les messages expirés"""
         try:
             now = get_timezone_aware_datetime()
-            expired_messages = Message.query.filter(Message.expires_at < now).all()
-            
-            for message in expired_messages:
-                db.session.delete(message)
-            
+            deleted = Message.query.filter(Message.expires_at < now).delete(synchronize_session=False)
             db.session.commit()
-            logger.info(f"Nettoyage de {len(expired_messages)} messages expirés")
-            return len(expired_messages)
+            logger.info(f"Nettoyage de {deleted} messages expirés")
+            return deleted
             
         except Exception as e:
             logger.error(f"Erreur lors du nettoyage des messages: {e}")
@@ -380,19 +466,39 @@ class MatchService:
             matches = Match.query.filter(
                 (Match.user1_id == user_id) | (Match.user2_id == user_id)
             ).all()
-            
+
+            # Précharger tous les autres utilisateurs en une seule requête
+            other_user_ids = [m.user2_id if m.user1_id == user_id else m.user1_id for m in matches]
+            if not other_user_ids:
+                return []
+
+            users_by_id = {u.id: u for u in User.query.filter(User.id.in_(other_user_ids)).all()}
+
+            # Précharger le dernier message pour chaque paire
+            pairs = set()
+            for other_id in other_user_ids:
+                a, b = sorted([user_id, other_id])
+                pairs.add((a, b))
+
+            last_messages_by_pair = {}
+            for a, b in pairs:
+                last_msg = (
+                    Message.query.filter(
+                        ((Message.sender_id == a) & (Message.receiver_id == b)) |
+                        ((Message.sender_id == b) & (Message.receiver_id == a))
+                    )
+                    .order_by(Message.created_at.desc())
+                    .first()
+                )
+                last_messages_by_pair[(a, b)] = last_msg
+
             matches_data = []
             for match in matches:
                 other_user_id = match.user2_id if match.user1_id == user_id else match.user1_id
-                other_user = User.query.get(other_user_id)
-                
+                other_user = users_by_id.get(other_user_id)
                 if other_user:
-                    # Récupérer le dernier message
-                    last_message = Message.query.filter(
-                        ((Message.sender_id == user_id) & (Message.receiver_id == other_user_id)) |
-                        ((Message.sender_id == other_user_id) & (Message.receiver_id == user_id))
-                    ).order_by(Message.created_at.desc()).first()
-                    
+                    a, b = sorted([user_id, other_user_id])
+                    last_message = last_messages_by_pair.get((a, b))
                     matches_data.append(MatchDisplay(other_user, last_message, match.created_at))
             
             # Trier par date de match
@@ -406,28 +512,27 @@ class MatchService:
     
     @staticmethod
     def get_received_likes(user_id):
-        """Récupère tous les likes reçus par un utilisateur (sans matcher)"""
+        """Récupère tous les likes reçus par un utilisateur"""
         try:
             # Récupérer tous les likes reçus
             received_likes = Like.query.filter_by(liked_id=user_id).all()
             
-            # Filtrer pour exclure les matches existants
             likes_data = []
             for like in received_likes:
-                # Vérifier si un match existe déjà
+                # Vérifier si c'est un match mutuel
+                mutual_like = Like.query.filter_by(liker_id=user_id, liked_id=like.liker_id).first()
                 existing_match = Match.query.filter(
                     ((Match.user1_id == user_id) & (Match.user2_id == like.liker_id)) |
                     ((Match.user1_id == like.liker_id) & (Match.user2_id == user_id))
                 ).first()
                 
-                if not existing_match:
-                    # Pas de match existant, on inclut ce like
-                    liker_user = User.query.get(like.liker_id)
-                    if liker_user:
-                        likes_data.append({
-                            'like': like,
-                            'user': liker_user
-                        })
+                liker_user = User.query.get(like.liker_id)
+                if liker_user:
+                    likes_data.append({
+                        'like': like,
+                        'user': liker_user,
+                        'is_match': bool(mutual_like or existing_match)
+                    })
             
             # Trier par date de like (plus récent en premier)
             likes_data.sort(key=lambda x: x['like'].created_at, reverse=True)
@@ -488,8 +593,6 @@ class NotificationService:
             )
             
             db.session.add(notification)
-            db.session.commit()
-            
             return notification
             
         except Exception as e:
@@ -517,14 +620,10 @@ class NotificationService:
         """Supprime les notifications expirées"""
         try:
             now = get_timezone_aware_datetime()
-            expired_notifications = Notification.query.filter(Notification.expires_at < now).all()
-            
-            for notification in expired_notifications:
-                db.session.delete(notification)
-            
+            deleted = Notification.query.filter(Notification.expires_at < now).delete(synchronize_session=False)
             db.session.commit()
-            logger.info(f"Nettoyage de {len(expired_notifications)} notifications expirées")
-            return len(expired_notifications)
+            logger.info(f"Nettoyage de {deleted} notifications expirées")
+            return deleted
             
         except Exception as e:
             logger.error(f"Erreur lors du nettoyage des notifications: {e}")

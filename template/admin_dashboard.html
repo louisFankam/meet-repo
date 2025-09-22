@@ -1,0 +1,247 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Tableau de bord - Administration Meet{% endblock %}
+
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Statistiques principales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-users text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Utilisateurs</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_users }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-heart text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Matches</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_matches }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <i class="fas fa-envelope text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Messages</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ total_messages }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                    <i class="fas fa-comments text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Conversations</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ active_conversations }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activité récente -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Utilisateurs récents -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-users text-admin-600 mr-2"></i>
+                    Utilisateurs récents
+                </h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Utilisateur
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Email
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Inscription
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for user in recent_users %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    {% if user.profile_photo %}
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Photo de profil">
+                                    {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ user.first_name }} {{ user.last_name }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ user.age }} ans</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ user.email }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ user.created_at.strftime('%d/%m/%Y') }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Messages récents -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-envelope text-admin-600 mr-2"></i>
+                    Messages récents
+                </h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                De
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                À
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Message
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for message in recent_messages %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ message.sender.first_name }} {{ message.sender.last_name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ message.receiver.first_name }} {{ message.receiver.last_name }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                <div class="max-w-xs truncate">
+                                    {{ message.content }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-tools text-admin-600 mr-2"></i>
+            Actions rapides
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button onclick="cleanupData()" class="bg-admin-600 hover:bg-admin-700 text-white px-4 py-3 rounded-md flex items-center justify-center transition duration-300">
+                <i class="fas fa-broom mr-2"></i>
+                Nettoyer les données
+            </button>
+            <button onclick="exportData()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-md flex items-center justify-center transition duration-300">
+                <i class="fas fa-download mr-2"></i>
+                Exporter les données
+            </button>
+            <a href="{{ url_for('admin_users') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-md flex items-center justify-center transition duration-300">
+                <i class="fas fa-users-cog mr-2"></i>
+                Gérer les utilisateurs
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-md flex items-center justify-center transition duration-300">
+                <i class="fas fa-chart-bar mr-2"></i>
+                Voir les analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques d'activité -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-chart-line text-admin-600 mr-2"></i>
+            Activité récente
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <div class="text-3xl font-bold text-blue-600">{{ recent_users|length }}</div>
+                <div class="text-sm text-gray-600">Nouveaux utilisateurs</div>
+                <div class="text-xs text-gray-500">(7 derniers jours)</div>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="text-3xl font-bold text-green-600">{{ recent_messages|length }}</div>
+                <div class="text-sm text-gray-600">Messages récents</div>
+                <div class="text-xs text-gray-500">(24 dernières heures)</div>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <div class="text-3xl font-bold text-purple-600">{{ "%.1f"|format(activity_rate) if activity_rate else 0 }}%</div>
+                <div class="text-sm text-gray-600">Taux d'activité</div>
+                <div class="text-xs text-gray-500">(utilisateurs actifs)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function cleanupData() {
+    showConfirmModal(
+        'Nettoyer les données expirées',
+        'Cette action supprimera tous les messages et notifications expirés. Continuer ?',
+        () => {
+            fetch('/api/admin/cleanup', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erreur lors du nettoyage');
+                    }
+                });
+        }
+    );
+}
+
+function exportData() {
+    showConfirmModal(
+        'Exporter les données',
+        'Cette action créera un fichier JSON avec toutes les données. Continuer ?',
+        () => {
+            window.open('/api/admin/export-data', '_blank');
+        }
+    );
+}
+</script>
+{% endblock %}

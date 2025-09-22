@@ -134,8 +134,11 @@ function getNotificationColor(type) {
 
 // Marquer une notification comme lue
 function markNotificationAsRead(notificationId) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        credentials: 'same-origin'
     })
     .then(response => response.json())
     .then(data => {

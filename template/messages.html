@@ -233,11 +233,11 @@
                             
                             <!-- Contenu du message (mobile) -->
                             <div class="relative">
-                                <div class="bg-{{ 'primary' if message.sender_id == current_user.id else 'gray' }}-100 
+                                <div class="{{ 'bg-primary text-white' if message.sender_id == current_user.id else 'bg-gray-100 text-gray-900' }} 
                                             rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-2 
                                             {{ 'rounded-br-sm' if message.sender_id == current_user.id else 'rounded-bl-sm' }}
                                             shadow-sm">
-                                    <p class="text-xs sm:text-sm text-gray-900 leading-relaxed">{{ message.content }}</p>
+                                    <p class="text-xs sm:text-sm leading-relaxed">{{ message.content }}</p>
                                 </div>
                                 
                                 <!-- Timestamp (mobile) -->
@@ -554,11 +554,14 @@ function handleMessageSubmit(e) {
 
 // Envoyer un message
 function sendMessage(content) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/api/send-message', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
             receiver_id: currentOtherUserId,
             content: content
@@ -608,8 +611,8 @@ function addMessageToUI(message, isSent = false) {
                 </div>
             </div>
             <div class="relative">
-                <div class="bg-${isSent ? 'primary' : 'gray'}-100 ${messageRadius} ${messagePadding} ${isSent ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-sm">
-                    <p class="${textSize} text-gray-900 leading-relaxed">${escapeHtml(message.content)}</p>
+                <div class="${isSent ? 'bg-primary text-white' : 'bg-gray-100 text-gray-900'} ${messageRadius} ${messagePadding} ${isSent ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-sm">
+                    <p class="${textSize} leading-relaxed">${escapeHtml(message.content)}</p>
                 </div>
                 <div class="flex items-center justify-between mt-1 px-1">
                     <span class="text-xs text-gray-500">${timeString}</span>
@@ -871,8 +874,11 @@ function closeProfileModal() {
 
 function unmatch(userId) {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce match ? Cette action est irréversible.')) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         fetch('/api/unmatch/' + userId, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            credentials: 'same-origin'
         })
         .then(response => response.json())
         .then(data => {

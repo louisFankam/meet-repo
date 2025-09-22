@@ -1,0 +1,178 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Top Utilisateurs - Administration Meet{% endblock %}
+
+{% block page_title %}Top Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Sélecteur de métrique -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900">Classement des utilisateurs</h2>
+                <p class="text-gray-600">Sélectionnez la métrique pour afficher le classement</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ url_for('admin_top_users', metric='matches') }}" 
+                   class="px-4 py-2 rounded-lg {% if metric == 'matches' %}bg-pink-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% %} transition duration-300">
+                    <i class="fas fa-heart mr-2"></i>Matches
+                </a>
+                <a href="{{ url_for('admin_top_users', metric='likes_received') }}" 
+                   class="px-4 py-2 rounded-lg {% if metric == 'likes_received' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% %} transition duration-300">
+                    <i class="fas fa-thumbs-up mr-2"></i>Likes reçus
+                </a>
+                <a href="{{ url_for('admin_top_users', metric='messages_sent') }}" 
+                   class="px-4 py-2 rounded-lg {% if metric == 'messages_sent' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% %} transition duration-300">
+                    <i class="fas fa-comments mr-2"></i>Messages envoyés
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top utilisateurs -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <i class="fas fa-trophy text-admin-600 mr-2"></i>
+                    {% if metric == 'matches' %}Utilisateurs avec le plus de matches
+                    {% elif metric == 'likes_received' %}Utilisateurs avec le plus de likes reçus
+                    {% elif metric == 'messages_sent' %}Utilisateurs avec le plus de messages envoyés
+                    {% endif %}
+                </h3>
+                <div class="text-sm text-gray-500">
+                    {{ top_users|length }} utilisateur{{ 's' if top_users|length > 1 else '' }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            {% if top_users %}
+                <div class="space-y-4">
+                    {% for user_data in top_users %}
+                    <div class="flex items-center justify-between p-4 {% if loop.index <= 3 %}bg-gradient-to-r from-yellow-50 to-transparent{% else %}bg-gray-50{% endif} rounded-lg">
+                        <div class="flex items-center space-x-4">
+                            <!-- Classement -->
+                            <div class="flex-shrink-0">
+                                {% if loop.index == 1 %}
+                                <div class="w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center font-bold">
+                                    1
+                                </div>
+                                {% elif loop.index == 2 %}
+                                <div class="w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center font-bold">
+                                    2
+                                </div>
+                                {% elif loop.index == 3 %}
+                                <div class="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold">
+                                    3
+                                </div>
+                                {% else %}
+                                <div class="w-8 h-8 bg-gray-300 text-gray-700 rounded-full flex items-center justify-center font-bold">
+                                    {{ loop.index }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Photo et infos -->
+                            <div class="flex items-center space-x-3">
+                                {% if user_data[0].profile_photo %}
+                                <img class="h-12 w-12 rounded-full object-cover" src="{{ url_for('static', filename='uploads/' + user_data[0].profile_photo) }}" alt="Photo de profil">
+                                {% else %}
+                                <div class="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-600"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div class="font-medium text-gray-900">
+                                        {{ user_data[0].first_name }} {{ user_data[0].last_name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ user_data[0].age }} ans • {{ user_data[0].city }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Score -->
+                        <div class="flex items-center space-x-4">
+                            <div class="text-right">
+                                <div class="text-2xl font-bold {% if loop.index == 1 %}text-yellow-600{% elif loop.index == 2 %}text-gray-600{% elif loop.index == 3 %}text-orange-600{% else %}text-gray-900{% endif %}">
+                                    {{ user_data[1] }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {% if metric == 'matches' %}matches
+                                    {% elif metric == 'likes_received' %}likes reçus
+                                    {% elif metric == 'messages_sent' %}messages envoyés
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Icône -->
+                            <div class="flex-shrink-0">
+                                {% if metric == 'matches' %}
+                                <i class="fas fa-heart text-2xl text-pink-500"></i>
+                                {% elif metric == 'likes_received' %}
+                                <i class="fas fa-thumbs-up text-2xl text-blue-500"></i>
+                                {% elif metric == 'messages_sent' %}
+                                <i class="fas fa-comments text-2xl text-green-500"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-trophy text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">Aucune donnée disponible pour cette métrique</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistiques supplémentaires -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ top_users|length }}</p>
+                </div>
+                <div class="p-3 rounded-full bg-admin-100 text-admin-600">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Moyenne</p>
+                    <p class="text-2xl font-semibold text-gray-900">
+                        {{ "%.1f"|format(top_users|map('last')|sum / top_users|length) if top_users else 0 }}
+                    </p>
+                </div>
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-chart-line text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Maximum</p>
+                    <p class="text-2xl font-semibold text-gray-900">
+                        {{ top_users|map('last')|max if top_users else 0 }}
+                    </p>
+                </div>
+                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <i class="fas fa-crown text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -188,15 +188,70 @@
             <i class="fas fa-tools text-primary mr-2"></i>
             Actions d'administration
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button onclick="cleanupData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button onclick="cleanupData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center text-sm">
                 <i class="fas fa-broom mr-2"></i>
-                Nettoyer les données expirées
+                Nettoyer les données
             </button>
-            <button onclick="exportData()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center justify-center">
+            <button onclick="exportData()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex items-center justify-center text-sm">
                 <i class="fas fa-download mr-2"></i>
                 Exporter les données
             </button>
+            <a href="{{ url_for('admin_users') }}" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md flex items-center justify-center text-sm">
+                <i class="fas fa-users-cog mr-2"></i>
+                Gérer les utilisateurs
+            </a>
+            <a href="{{ url_for('admin_analytics') }}" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md flex items-center justify-center text-sm">
+                <i class="fas fa-chart-bar mr-2"></i>
+                Voir les analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Liens rapides -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-link text-primary mr-2"></i>
+            Liens rapides
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <a href="{{ url_for('admin_top_users') }}?metric=matches" class="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white px-4 py-3 rounded-lg flex items-center justify-center text-sm">
+                <i class="fas fa-heart mr-2"></i>
+                Top Users (Matches)
+            </a>
+            <a href="{{ url_for('admin_top_users') }}?metric=likes_received" class="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-4 py-3 rounded-lg flex items-center justify-center text-sm">
+                <i class="fas fa-thumbs-up mr-2"></i>
+                Top Users (Likes)
+            </a>
+            <a href="{{ url_for('admin_top_users') }}?metric=messages_sent" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 py-3 rounded-lg flex items-center justify-center text-sm">
+                <i class="fas fa-comments mr-2"></i>
+                Top Users (Messages)
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques récentes -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            <i class="fas fa-chart-line text-primary mr-2"></i>
+            Activité récente
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ recent_users|length }}</div>
+                <div class="text-sm text-gray-600">Nouveaux utilisateurs</div>
+                <div class="text-xs text-gray-500">(7 derniers jours)</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600">{{ recent_messages|length }}</div>
+                <div class="text-sm text-gray-600">Messages récents</div>
+                <div class="text-xs text-gray-500">(24 dernières heures)</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600">{{ "%.1f"|format(activity_rate) if activity_rate else 0 }}%</div>
+                <div class="text-sm text-gray-600">Taux d'activité</div>
+                <div class="text-xs text-gray-500">(utilisateurs actifs)</div>
+            </div>
         </div>
     </div>
 </div>

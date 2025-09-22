@@ -41,7 +41,7 @@ def init_extensions(app):
     
     # Configuration de la base de données (ne pas écraser la configuration existante)
     if 'SQLALCHEMY_DATABASE_URI' not in app.config:
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///meet.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@localhost/meet_db')
     if 'SQLALCHEMY_TRACK_MODIFICATIONS' not in app.config:
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     

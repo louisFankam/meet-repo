@@ -31,6 +31,7 @@ class User(UserMixin, db.Model):
     second_photo = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=True)
     is_verified = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=get_timezone_aware_datetime, index=True)
     last_active = db.Column(db.DateTime, default=get_timezone_aware_datetime, index=True)
     updated_at = db.Column(db.DateTime, default=get_timezone_aware_datetime, onupdate=get_timezone_aware_datetime)
@@ -187,7 +188,7 @@ class Message(db.Model):
 
 class Like(db.Model):
     """Modèle Like"""
-    __tablename__ = 'like'
+    __tablename__ = 'likes'
     
     id = db.Column(db.Integer, primary_key=True)
     liker_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
@@ -206,7 +207,7 @@ class Like(db.Model):
 
 class Match(db.Model):
     """Modèle Match"""
-    __tablename__ = 'match'
+    __tablename__ = 'matches'
     
     id = db.Column(db.Integer, primary_key=True)
     user1_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)

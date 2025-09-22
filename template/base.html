@@ -61,12 +61,7 @@
                         <a href="{{ url_for('profile', user_id=current_user.id) }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-user mr-2"></i>Profil
                         </a>
-                        {% if current_user.email == 'admin@meet.com' %}
-                        <a href="{{ url_for('admin') }}" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-shield-alt mr-2"></i>Admin
-                        </a>
-                        {% endif %}
-                    </div>
+                                            </div>
                 </div>
                 
                 <div class="hidden md:flex items-center">
@@ -110,12 +105,7 @@
                 <a href="{{ url_for('profile', user_id=current_user.id) }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
                     <i class="fas fa-user mr-2"></i>Profil
                 </a>
-                {% if current_user.email == 'admin@meet.com' %}
-                <a href="{{ url_for('admin') }}" class="block px-3 py-2 text-gray-700 hover:text-primary rounded-md text-base font-medium">
-                    <i class="fas fa-shield-alt mr-2"></i>Administration
-                </a>
-                {% endif %}
-                <div class="border-t border-gray-200 pt-2 mt-2">
+                                <div class="border-t border-gray-200 pt-2 mt-2">
                     <div class="relative px-3 py-2">
                         <button id="mobile-notifications-btn" class="text-gray-700 hover:text-primary w-full text-left">
                             <i class="fas fa-bell mr-2"></i>Notifications
@@ -159,6 +149,28 @@
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="text-center">
                 <p>&copy; 2024 Meet - Application de Rencontre. Tous droits réservés.</p>
+                
+                <!-- Section Support Discrète -->
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <p class="text-xs text-gray-400 mb-3">Vous appréciez notre application gratuite ? Votre soutien nous aide à l'améliorer !</p>
+                    <div class="flex justify-center space-x-6">
+                        <!-- Orange Money -->
+                        <div class="text-center">
+                            <button onclick="showOrangeMoneyInfo()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-4 rounded-lg text-base sm:text-lg transition duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                <i class="fas fa-mobile-alt text-xl"></i>
+                                <span class="font-semibold">Orange Money</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Wave -->
+                        <div class="text-center">
+                            <button onclick="showWaveInfo()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg text-base sm:text-lg transition duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                <i class="fas fa-water text-xl"></i>
+                                <span class="font-semibold">Wave</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
@@ -189,6 +201,71 @@
             // Compter les likes reçus
             updateLikesCount();
         });
+        
+        // Fonctions pour les dons
+        function showOrangeMoneyInfo() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 m-4 max-w-sm w-full">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-mobile-alt text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Soutenir avec Orange Money</h3>
+                        <p class="text-gray-600 mb-4">Votre soutien nous aide à maintenir cette application gratuite</p>
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-700 mb-2"><strong>Numéro:</strong></p>
+                            <p class="text-lg font-mono text-orange-600">+223 92 00 86 52</p>
+                            <p class="text-xs text-gray-500 mt-2">Nom: MEET APP</p>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg w-full text-base font-medium">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Fermer en cliquant à l'extérieur
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        function showWaveInfo() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 m-4 max-w-sm w-full">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-water text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Soutenir avec Wave</h3>
+                        <p class="text-gray-600 mb-4">Votre soutien nous aide à maintenir cette application gratuite</p>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-700 mb-2"><strong>Numéro:</strong></p>
+                            <p class="text-lg font-mono text-blue-600">+223 92 00 86 52</p>
+                            <p class="text-xs text-gray-500 mt-2">Nom: MEET APP</p>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg w-full text-base font-medium">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Fermer en cliquant à l'extérieur
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
         
         function updateLikesCount() {
             fetch('/api/likes-received')
