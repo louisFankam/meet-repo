@@ -8,8 +8,13 @@ import sys
 import logging
 from flask import Flask
 from dotenv import load_dotenv
-from model.extensions import init_extensions
-from model.database import db
+
+# charger .env tôt
+load_dotenv()
+
+# importer les extensions correctement
+from model.extensions import init_extensions, db
+
 from controller.routes import register_routes, register_filters
 from model.services import InterestService
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -17,9 +22,6 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 # Scheduler pour le nettoyage automatique
 scheduler = BackgroundScheduler()
-
-# Load environment variables from .env file
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +36,23 @@ def create_app(config_object=None):
     else:
         # Configuration par défaut
         app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+pymysql://root:@localhost/meet_db')
+
+        # Priorité: SQLALCHEMY_DATABASE_URI > DATABASE_URL > construction à partir des composants
+        uri = os.getenv('SQLALCHEMY_DATABASE_URI') or os.getenv('DATABASE_URL')
+        if not uri:
+            user = os.getenv('DATABASE_USER', 'root')
+            password = os.getenv('DATABASE_PASSWORD', '')  # mettre le mot de passe dans .env
+            host = os.getenv('DATABASE_HOST', 'localhost')
+            name = os.getenv('DATABASE_NAME', 'meet_db')
+            uri = f"mysql+pymysql://{user}:{password}@{host}/{name}"
+        app.config['SQLALCHEMY_DATABASE_URI'] = uri
+
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['UPLOAD_FOLDER'] = 'static/uploads'
         app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
     
     # Initialiser les extensions
     init_extensions(app)
-    
-    # CSRF activé via CSRFProtect() dans extensions
     
     # Enregistrer les routes et filtres
     register_routes(app)
@@ -52,12 +62,15 @@ def create_app(config_object=None):
     app.template_folder = 'template'
     
     with app.app_context():
-        db.create_all()
-        InterestService.initialize_default_interests()
+        try:
+            db.create_all()
+            InterestService.initialize_default_interests()
+        except Exception as e:
+            logger.error("Impossible de créer les tables au démarrage: %s", e)
+            # Ne pas crash pour permettre debug de configuration DB
     
-    # Configurer le nettoyage automatique
+    # Fonction de nettoyage automatique planifiée
     def scheduled_cleanup():
-        """Fonction de nettoyage automatique planifiée"""
         with app.app_context():
             try:
                 from model.services import cleanup_expired_messages, cleanup_expired_notifications
