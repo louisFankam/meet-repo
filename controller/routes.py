@@ -121,7 +121,7 @@ def register_routes(app):
         return render_template('index.html')
     
     @app.route('/register', methods=['GET', 'POST'])
-    @limiter.limit("5 per minute, 20 per hour")
+    @limiter_instance.limit("5 per minute, 20 per hour")
     def register():
         """Page d'inscription"""
         if request.method == 'POST':
@@ -238,7 +238,7 @@ def register_routes(app):
         return render_template('register.html')
     
     @app.route('/login', methods=['GET', 'POST'])
-    @limiter.limit("10 per minute, 50 per hour")
+    @limiter_instance.limit("10 per minute, 50 per hour")
     def login():
         """Page de connexion"""
         if request.method == 'POST':
