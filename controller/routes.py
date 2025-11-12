@@ -22,19 +22,96 @@ from model.services import (
 )
 from model.admin_service import AdminService
 from flask_session import Session
-from rate_limit_config import configure_rate_limiter, limiter
+from rate_limit_config import configure_rate_limiter
+from security_validation import validator
+from security_logging import security_logger
 
 logger = logging.getLogger(__name__)
+
+
+def validate_password_strength(password):
+    """Valide la complexité d'un mot de passe"""
+    errors = []
+    
+    # Vérifier que password est une chaîne
+    if not isinstance(password, str):
+        errors.append('Le mot de passe doit être une chaîne de caractères')
+        return {
+            'valid': False,
+            'errors': errors,
+            'strength': 'faible'
+        }
+    
+    # Longueur minimale
+    if len(password) < 8:
+        errors.append('Le mot de passe doit contenir au moins 8 caractères')
+    
+    # Au moins une majuscule
+    if not re.search(r'[A-Z]', password):
+        errors.append('Le mot de passe doit contenir au moins une majuscule')
+    
+    # Au moins une minuscule
+    if not re.search(r'[a-z]', password):
+        errors.append('Le mot de passe doit contenir au moins une minuscule')
+    
+    # Au moins un chiffre
+    if not re.search(r'\d', password):
+        errors.append('Le mot de passe doit contenir au moins un chiffre')
+    
+    # Au moins un caractère spécial
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        errors.append('Le mot de passe doit contenir au moins un caractère spécial')
+    
+    # Pas d'espaces
+    if ' ' in password:
+        errors.append('Le mot de passe ne doit pas contenir d\'espaces')
+    
+    # Mots de passe communs (liste simplifiée)
+    common_passwords = ['password', '12345678', 'azerty', 'qwerty', 'admin', 'meet123']
+    if password.lower() in common_passwords:
+        errors.append('Ce mot de passe est trop commun')
+    
+    return {
+        'valid': len(errors) == 0,
+        'errors': errors,
+        'strength': calculate_password_strength(password)
+    }
+
+
+def calculate_password_strength(password):
+    """Calcule un score de force pour le mot de passe"""
+    score = 0
+    
+    # Longueur
+    if len(password) >= 8:
+        score += 1
+    if len(password) >= 12:
+        score += 1
+    
+    # Complexité
+    if re.search(r'[A-Z]', password):
+        score += 1
+    if re.search(r'[a-z]', password):
+        score += 1
+    if re.search(r'\d', password):
+        score += 1
+    if re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        score += 1
+    
+    if score >= 5:
+        return 'fort'
+    elif score >= 3:
+        return 'moyen'
+    else:
+        return 'faible'
 
 
 def register_routes(app):
     """Enregistre toutes les routes de l'application"""
     
     # Configurer le rate limiter
-    global limiter
-    limiter = configure_rate_limiter(app)
-    
-    """Enregistre toutes les routes de l'application"""
+    from rate_limit_config import limiter
+    limiter_instance = configure_rate_limiter(app)
     
     @app.route('/')
     def index():
@@ -49,45 +126,81 @@ def register_routes(app):
         """Page d'inscription"""
         if request.method == 'POST':
             try:
-                # Validation des données
+                # Validation sécurisée des données
                 data = request.form
                 
-                # Valider l'email
-                try:
-                    validate_email(data.get('email'))
-                except EmailNotValidError:
+                # Valider l'email avec notre validateur sécurisé
+                email_validation = validator.validate_email(data.get('email', ''))
+                if not email_validation['valid']:
                     flash('Email invalide', 'error')
+                    logger.warning(f"Tentative d'inscription avec email invalide: {data.get('email')}")
                     return render_template('register.html')
+                safe_email = email_validation['sanitized']
                 
                 # Valider le mot de passe
                 password = data.get('password')
-                if len(password) < 8:
-                    flash('Le mot de passe doit contenir au moins 8 caractères', 'error')
+                password_validation = validate_password_strength(password)
+                if not password_validation['valid']:
+                    for error in password_validation['errors']:
+                        flash(error, 'error')
                     return render_template('register.html')
                 
                 # Vérifier si l'email existe déjà
-                if UserService.get_user_by_email(data.get('email')):
+                if UserService.get_user_by_email(safe_email):
                     flash('Cet email est déjà utilisé', 'error')
                     return render_template('register.html')
                 
-                # Valider la date de naissance
-                try:
-                    birth_date = datetime.strptime(data.get('birth_date'), '%Y-%m-%d').date()
-                except ValueError:
-                    flash('Date de naissance invalide', 'error')
+                # Valider la date de naissance avec notre validateur sécurisé
+                date_validation = validator.validate_date(data.get('birth_date', ''))
+                if not date_validation['valid']:
+                    for error in date_validation['errors']:
+                        flash(error, 'error')
                     return render_template('register.html')
+                safe_birth_date = date_validation['sanitized']
                 
-                # Créer l'utilisateur
+                # Valider le prénom
+                first_name_validation = validator.validate_name(data.get('first_name', ''))
+                if not first_name_validation['valid']:
+                    for error in first_name_validation['errors']:
+                        flash(error, 'error')
+                    return render_template('register.html')
+                safe_first_name = first_name_validation['sanitized']
+                
+                # Valider le nom
+                last_name_validation = validator.validate_name(data.get('last_name', ''))
+                if not last_name_validation['valid']:
+                    for error in last_name_validation['errors']:
+                        flash(error, 'error')
+                    return render_template('register.html')
+                safe_last_name = last_name_validation['sanitized']
+                
+                # Valider la ville
+                city_validation = validator.validate_city(data.get('city', ''))
+                if not city_validation['valid']:
+                    for error in city_validation['errors']:
+                        flash(error, 'error')
+                    return render_template('register.html')
+                safe_city = city_validation['sanitized']
+                
+                # Valider la bio
+                bio_validation = validator.validate_bio(data.get('bio', ''))
+                if not bio_validation['valid']:
+                    for error in bio_validation['errors']:
+                        flash(error, 'error')
+                    return render_template('register.html')
+                safe_bio = bio_validation['sanitized']
+                
+                # Créer l'utilisateur avec les données validées et sécurisées
                 user = UserService.create_user(
-                    email=data.get('email'),
+                    email=safe_email,
                     password=password,
-                    first_name=data.get('first_name'),
-                    last_name=data.get('last_name'),
-                    birth_date=birth_date,
-                    gender=data.get('gender'),
-                    interested_in=data.get('interested_in'),
-                    city=data.get('city'),
-                    bio=data.get('bio')
+                    first_name=safe_first_name,
+                    last_name=safe_last_name,
+                    birth_date=safe_birth_date,
+                    gender=data.get('gender', ''),
+                    interested_in=data.get('interested_in', ''),
+                    city=safe_city,
+                    bio=safe_bio
                 )
                 
                 # Gérer les centres d'intérêt
@@ -140,6 +253,11 @@ def register_routes(app):
                 user = UserService.get_user_by_email(email)
                 
                 if user and user.check_password(password) and user.is_active:
+                    # Connexion réussie
+                    security_logger.log_admin_access_attempt(
+                        success=user.is_admin,
+                        email=email
+                    )
                     
                     login_user(user)
                     user.update_last_active()
@@ -150,6 +268,18 @@ def register_routes(app):
                     next_page = request.args.get('next')
                     return redirect(next_page or url_for('dashboard'))
                 else:
+                    # Échec de connexion - logging de sécurité
+                    if user:
+                        security_logger.log_brute_force_attempt(
+                            email=email,
+                            reason="Mot de passe incorrect"
+                        )
+                    else:
+                        security_logger.log_brute_force_attempt(
+                            email=email,
+                            reason="Email non trouvé"
+                        )
+                    
                     flash('Email ou mot de passe incorrect', 'error')
                     
             except Exception as e:

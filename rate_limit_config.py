@@ -34,18 +34,29 @@ RATE_LIMITS = {
 def configure_rate_limiter(app):
     """Configure le rate limiter avec des paramètres sécurisés"""
     
-    limiter = Limiter(
-        app,
+    # Configuration de stockage selon l'environnement
+    storage_uri = "memory://"
+    if app.config.get('FLASK_ENV') == 'production':
+        # En production, utiliser Redis si disponible
+        storage_uri = "redis://localhost:6379"
+    
+    # Créer l'instance du limiter
+    limiter_instance = Limiter(
+        app=app,
         key_func=get_remote_address,
         default_limits=RATE_LIMITS['default'],
-        storage_uri="memory://",  # Stockage en mémoire pour le développement
-        # Pour la production, utiliser Redis: "redis://localhost:6379"
+        storage_uri=storage_uri,
     )
+    
+    # Mettre à jour la variable globale pour les décorateurs
+    global limiter
+    limiter = limiter_instance
     
     # Logging des violations de rate limiting
     @app.errorhandler(429)
     def ratelimit_handler(e):
         """Handler personnalisé pour les violations de rate limiting"""
+        from flask import request
         logger.warning(f"Rate limit dépassé pour {get_remote_address()} sur {request.endpoint}")
         return {
             'success': False,
@@ -54,8 +65,11 @@ def configure_rate_limiter(app):
         }, 429
     
     logger.info("Rate limiter configuré avec sécurité renforcée")
-    return limiter
+    return limiter_instance
 
+
+# Création du limiter global
+limiter = None
 
 # Décorateurs de rate limiting personnalisés
 def strict_rate_limit(limit_string):
@@ -65,10 +79,13 @@ def strict_rate_limit(limit_string):
         
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            ip = get_remote_address()
-            endpoint = f.__name__
-            logger.info(f"Requête rate-limited: {endpoint} depuis {ip}")
-            return limiter.limit(limit_string)(f)(*args, **kwargs)
+            if limiter:
+                ip = get_remote_address()
+                endpoint = f.__name__
+                logger.info(f"Requête rate-limited: {endpoint} depuis {ip}")
+                return limiter.limit(limit_string)(f)(*args, **kwargs)
+            else:
+                return f(*args, **kwargs)
         
         return decorated_function
     return decorator
@@ -81,16 +98,15 @@ def critical_rate_limit(limit_string):
         
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            ip = get_remote_address()
-            endpoint = f.__name__
-            user_agent = request.headers.get('User-Agent', 'Unknown')
-            
-            logger.warning(f"Requête critique: {endpoint} depuis {ip} - {user_agent}")
-            return limiter.limit(limit_string)(f)(*args, **kwargs)
+            if limiter:
+                ip = get_remote_address()
+                endpoint = f.__name__
+                user_agent = request.headers.get('User-Agent', 'Unknown')
+                
+                logger.warning(f"Requête critique: {endpoint} depuis {ip} - {user_agent}")
+                return limiter.limit(limit_string)(f)(*args, **kwargs)
+            else:
+                return f(*args, **kwargs)
         
         return decorated_function
     return decorator
-
-
-# Création du limiter global
-limiter = None
