@@ -74,23 +74,8 @@ class UserService:
                 logger.error("Tentative d'accès à la base de données sans contexte d'application")
                 return None
             
-            # Debug: Vérifier l'état de la base de données
-            from flask import current_app
-            logger.debug(f"App context: {current_app}")
-            logger.debug(f"Database URI: {current_app.config.get('SQLALCHEMY_DATABASE_URI')}")
-            logger.debug(f"Database engine: {db.engine}")
-            
-            # Debug: Vérifier si le modèle User est correctement lié
-            logger.debug(f"User model: {User}")
-            logger.debug(f"User query: {User.query}")
-            
             # Utiliser une session propre pour cette requête
             result = User.query.filter_by(email=email).first()
-            logger.debug(f"Recherche utilisateur par email '{email}': {result}")
-            
-            # Debug: Vérifier tous les utilisateurs dans la base
-            all_users = User.query.all()
-            logger.debug(f"Tous les utilisateurs dans la base: {all_users}")
             
             return result
         except Exception as e:
@@ -108,7 +93,6 @@ class UserService:
                 return None
             
             result = User.query.get(user_id)
-            logger.debug(f"Recherche utilisateur par ID '{user_id}': {result}")
             return result
         except Exception as e:
             logger.error(f"Erreur lors de la recherche de l'utilisateur par ID '{user_id}': {e}")

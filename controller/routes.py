@@ -8,6 +8,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 from email_validator import validate_email, EmailNotValidError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import re
 import logging
 
@@ -20,13 +22,18 @@ from model.services import (
 )
 from model.admin_service import AdminService
 from flask_session import Session
+from rate_limit_config import configure_rate_limiter, limiter
 
 logger = logging.getLogger(__name__)
 
 
-
-
 def register_routes(app):
+    """Enregistre toutes les routes de l'application"""
+    
+    # Configurer le rate limiter
+    global limiter
+    limiter = configure_rate_limiter(app)
+    
     """Enregistre toutes les routes de l'application"""
     
     @app.route('/')
@@ -37,6 +44,7 @@ def register_routes(app):
         return render_template('index.html')
     
     @app.route('/register', methods=['GET', 'POST'])
+    @limiter.limit("5 per minute, 20 per hour")
     def register():
         """Page d'inscription"""
         if request.method == 'POST':
@@ -117,6 +125,7 @@ def register_routes(app):
         return render_template('register.html')
     
     @app.route('/login', methods=['GET', 'POST'])
+    @limiter.limit("10 per minute, 50 per hour")
     def login():
         """Page de connexion"""
         if request.method == 'POST':
@@ -124,15 +133,11 @@ def register_routes(app):
                 email = request.form.get('email')
                 password = request.form.get('password')
                 
-                # Retirer logs sensibles en prod
-                
                 if not email or not password:
                     flash('Email et mot de passe requis', 'error')
                     return render_template('login.html')
                 
                 user = UserService.get_user_by_email(email)
-                
-                # Retirer logs sensibles en prod
                 
                 if user and user.check_password(password) and user.is_active:
                     

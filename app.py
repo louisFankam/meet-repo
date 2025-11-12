@@ -19,6 +19,7 @@ from controller.routes import register_routes, register_filters
 from model.services import InterestService
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from security_middleware import apply_security_headers
 
 # Scheduler pour le nettoyage automatique
 scheduler = BackgroundScheduler()
@@ -40,19 +41,51 @@ def create_app(config_object=None):
         # Priorité: SQLALCHEMY_DATABASE_URI > DATABASE_URL > construction à partir des composants
         uri = os.getenv('SQLALCHEMY_DATABASE_URI') or os.getenv('DATABASE_URL')
         if not uri:
-            user = os.getenv('DATABASE_USER', 'root')
-            password = os.getenv('DATABASE_PASSWORD', '')  # mettre le mot de passe dans .env
-            host = os.getenv('DATABASE_HOST', 'localhost')
-            name = os.getenv('DATABASE_NAME', 'meet_db')
-            uri = f"mysql+pymysql://{user}:{password}@{host}/{name}"
+            # Utilisation des variables d'environnement centralisées
+            user = os.getenv('DB_USER', 'root')
+            password = os.getenv('DB_PASSWORD', '')
+            host = os.getenv('DB_HOST', 'localhost')
+            port = os.getenv('DB_PORT', '3306')
+            name = os.getenv('DB_NAME', 'meet_db')
+            uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}"
         app.config['SQLALCHEMY_DATABASE_URI'] = uri
+        
+        # Configuration BDD additionnelle
+        app.config['DB_USER'] = os.getenv('DB_USER', 'root')
+        app.config['DB_PASSWORD'] = os.getenv('DB_PASSWORD', '')
+        app.config['DB_HOST'] = os.getenv('DB_HOST', 'localhost')
+        app.config['DB_PORT'] = os.getenv('DB_PORT', '3306')
+        app.config['DB_NAME'] = os.getenv('DB_NAME', 'meet_db')
 
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['UPLOAD_FOLDER'] = 'static/uploads'
         app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+        
+        # Configuration production
+        is_production = os.getenv('FLASK_ENV') == 'production'
+        if is_production:
+            app.config['DEBUG'] = False
+            app.config['TESTING'] = False
+            # Logging en production
+            if not app.debug:
+                import logging
+                from logging.handlers import RotatingFileHandler
+                if not os.path.exists('logs'):
+                    os.mkdir('logs')
+                file_handler = RotatingFileHandler('logs/meet.log', maxBytes=10240, backupCount=10)
+                file_handler.setFormatter(logging.Formatter(
+                    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+                ))
+                file_handler.setLevel(logging.INFO)
+                app.logger.addHandler(file_handler)
+                app.logger.setLevel(logging.INFO)
+                app.logger.info('Meet startup')
     
     # Initialiser les extensions
     init_extensions(app)
+    
+    # Appliquer les middlewares de sécurité
+    apply_security_headers(app)
     
     # Enregistrer les routes et filtres
     register_routes(app)
