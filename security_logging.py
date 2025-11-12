@@ -15,6 +15,10 @@ class SecurityLogger:
     """Logger spécialisé pour la sécurité et la détection d'intrusions"""
     
     def __init__(self):
+        # Créer le dossier logs s'il n'existe pas
+        import os
+        os.makedirs('logs', exist_ok=True)
+        
         # Créer un logger dédié à la sécurité
         self.logger = logging.getLogger('security')
         
