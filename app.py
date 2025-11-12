@@ -135,5 +135,19 @@ def create_app(config_object=None):
 
 if __name__ == '__main__':
     app = create_app()
+    
+    # Configuration du port avec fallback
+    port = int(os.getenv('PORT', 5000))
+    if port == 5001:
+        # Essayer le port 5000 si 5001 est occupé
+        try:
+            import socket
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', 5000))
+                port = 5000
+        except OSError:
+            # Si les deux sont occupés, utiliser 5002
+            port = 5002
+    
     # Configuration de production
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=False)
